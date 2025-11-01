@@ -1,0 +1,63 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*.local
+.env.local
+.env.production
+.env.test
+
+# Logs and runtime files
+logs/
+*.log
+pids/
+*.pid
+*.pid.lock
+tmp/
+temp/
+
+# Build output
+dist/
+build/
+out/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Package manager / lock caches
+.pnp.*
+.yarn/*
+.cache/
+
+# IDEs / editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploaded assets / runtime uploads
+uploads/
+public/uploads/
+
+# Test output
+jest-test-results.json
+test-output/
+
+# Certificates / keys (if present in repo root)
+*.pem
+*.key
+*.crt
