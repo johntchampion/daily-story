@@ -50,6 +50,7 @@ coverage/
 Thumbs.db
 
 # Uploaded assets / runtime uploads
+stories/
 uploads/
 public/uploads/
 
