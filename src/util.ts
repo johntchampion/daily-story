@@ -64,7 +64,7 @@ const getResponseFormat = (
 
     The messages array should contain at least 10 message objects with "text" and "sender" properties.
     The correctAnswer field should be the index (0-3) of the correct option.
-    Respond only with the JSON, no additional text.
+    IMPORTANT: Respond ONLY with the raw JSON object. Do NOT wrap it in markdown code blocks or backticks.
     `
   } else {
     return `
@@ -92,7 +92,7 @@ const getResponseFormat = (
     }
 
     The correctAnswer field should be the index (0-3) of the correct option.
-    Respond only with the JSON, no additional text.
+    IMPORTANT: Respond ONLY with the raw JSON object. Do NOT wrap it in markdown code blocks or backticks.
     `
   }
 }
@@ -121,24 +121,72 @@ const getPrompt = (language: string, level: string) => {
   return promptString
 }
 
+// Clean and fix JSON formatting issues from different languages
 const cleanJsonString = (string: string) => {
-  return (
-    string
-      // Remove Markdown fences like ```json or ```
-      .replace(/```json|```/gi, '')
-      // Remove stray triple quotes or language tags
-      .replace(/^json\s*/i, '')
-      // Replace smart quotes with straight ones
-      .replace(/[“”]/g, '"')
-      .replace(/[‘’]/g, "'")
-      // Escape unescaped inner quotes inside strings
-      // (only if inside value text between colons)
-      .replace(/:\s*"([^"]*?)"([^",}\]\n\r])/g, ':"$1\\"$2')
-      // Remove trailing commas before } or ]
-      .replace(/,\s*([}\]])/g, '$1')
-      // Trim whitespace
-      .trim()
-  )
+  let cleaned = string.trim()
+
+  // Remove markdown code fences - look for ```json or ``` at start
+  // and ``` at end, capturing everything in between
+  const markdownMatch = cleaned.match(/^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/m)
+  if (markdownMatch && markdownMatch[1]) {
+    cleaned = markdownMatch[1]
+  }
+
+  // If there's still a leading ``` without the ending captured, remove it
+  cleaned = cleaned.replace(/^```(?:json)?\s*\n?/gim, '')
+  cleaned = cleaned.replace(/\n?```\s*$/gim, '')
+
+  // Replace smart quotes with straight ones
+  // Include: " " (U+201C, U+201D), „ (U+201E - German low quote), ‟ (U+201F)
+  cleaned = cleaned.replace(/[""„‟]/g, '"')
+  cleaned = cleaned.replace(/[''‚‛]/g, "'")
+
+  // Fix unescaped quotes within JSON string values
+  // Process line by line to handle dialogue quotes in stories
+  const lines = cleaned.split('\n')
+  cleaned = lines
+    .map((line) => {
+      // Skip empty lines or structural JSON
+      if (/^\s*[{}\[\],]?\s*$/.test(line)) {
+        return line
+      }
+
+      // Check if this line contains a string property with value
+      // Pattern: "property": "value..."
+      const match = line.match(/^(\s*"[^"]+"\s*:\s*")(.*?)(",?\s*)$/)
+      if (!match || !match[1] || !match[2] || !match[3]) {
+        return line // Not a simple property: value line
+      }
+
+      const prefix = match[1] // e.g., '  "story": "'
+      const content = match[2] // the actual value content
+      const suffix = match[3] // '",\n' or '"\n'
+
+      // In the content, escape any unescaped quotes
+      let escaped = ''
+      for (let i = 0; i < content.length; i++) {
+        const char = content[i]
+        if (char === '\\' && i + 1 < content.length) {
+          // Already escaped, keep both characters
+          const nextChar = content[i + 1]
+          escaped += char + nextChar
+          i++ // skip next char
+        } else if (char === '"') {
+          // Unescaped quote - escape it
+          escaped += '\\"'
+        } else {
+          escaped += char
+        }
+      }
+
+      return prefix + escaped + suffix
+    })
+    .join('\n')
+
+  // Remove trailing commas before } or ]
+  cleaned = cleaned.replace(/,\s*([}\]])/g, '$1')
+
+  return cleaned.trim()
 }
 
 const client = new Anthropic({
