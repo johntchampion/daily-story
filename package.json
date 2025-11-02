@@ -22,10 +22,10 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
     "cron": "^4.3.3",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
-    "express": "^5.1.0",
-    "openai": "^6.7.0"
+    "express": "^5.1.0"
   }
 }

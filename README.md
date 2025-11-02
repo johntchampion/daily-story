@@ -12,16 +12,13 @@ Supported languages right now include English, Spanish, French, German, Italian,
 
 ## Running On Your Machine
 
-You can either use a locally-running LLM, or you can use one from an external source like from OpenAI.
+You must have an active API Key from Anthropic for this to work.
 
 ### Environment Variables
 
-| Name         |                Description                 |             Example |
-| :----------- | :----------------------------------------: | ------------------: |
-| LLM_BASE_URL | The base URL of the API to access the LLM. | https://api.llm.com |
-| LLM_API_KEY  | The API key of the LLM service being used. |         llm-api-key |
-
-_Note:_ These values will default to those of a locally-running LLM if not provided.
+| Name              |        Description         |           Example |
+| :---------------- | :------------------------: | ----------------: |
+| ANTHROPIC_API_KEY | The API Key for Anthropic. | anthropic-api-key |
 
 ### Starting The App
 
