@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Story</title>
+    <title>Daily Story - <%= language %> - <%= level %></title>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/story.css">
 </head>
 <body>
     <div class="story">
     <h1 class="story-title"><%= title %></h1>
-    <p class="story-date"><%= date %></p>
+    <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
     <% if (messages && messages.length > 0) { %>
         <% messages.forEach((message, index) => { %>
             <div class="message">
@@ -40,6 +40,15 @@
             <% }) %>
         </div>
     <% } %>
+
+    <p class="bookmark-message">Bookmark this page and come back tomorrow for a new story!</p>
+    <ul class="difficulty-links">
+        <% allLevels.forEach((lvl) => { %>
+            <li class="<%= lvl === level ? 'active' : '' %>">
+                <a href="/<%= languageParam %>/<%= lvl.toLowerCase() %>"><%= lvl %></a>
+            </li>
+        <% }) %>
+    </ul>
 
     <script>
         function selectAnswer(element) {
