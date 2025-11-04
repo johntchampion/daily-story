@@ -101,16 +101,42 @@ const getPrompt = (language: string, level: string) => {
   let promptString = ''
   const questionLanguage = EARLY_LEVELS.includes(level) ? 'English' : language
 
-  if (EARLY_LEVELS.includes(level)) {
-    promptString += `
-      Write text message thread in ${language} at a ${level} language level. There should be at least ten messages exchanged between two people.
-      Use simple vocabulary and short sentences suitable for early language learners.
-      `
-  } else if (INTERMEDIATE_LEVELS.includes(level)) {
-    promptString += `
-      Write a fable-like story in ${language} at a ${level} language level. The story should be between 300 and 500 words long.
-      Incorporate a mix of common and slightly advanced vocabulary with varied sentence structures.
-      `
+  switch (level) {
+    case 'A1':
+      promptString += `
+        Create a casual text message conversation in ${language} at a ${level} language level between two people discussing an everyday situation (meeting up, making plans, sharing news, etc.).
+        Write at least 10 alternating messages with natural back-and-forth exchanges.
+        Use only simple, common vocabulary and short sentences (5-10 words per message) appropriate for absolute beginners.
+        Include greetings, questions, and responses that feel natural and conversational.
+        `
+      break
+    case 'A2':
+      promptString += `
+        Create an informal email exchange in ${language} at a ${level} language level between two people (friends, classmates, or casual acquaintances) discussing a relatable topic (planning an event, asking for advice, sharing experiences, etc.).
+        Write at least 10 emails total, alternating between the two people.
+        Use simple vocabulary with some basic connectors and complete sentences suitable for elementary learners.
+        Include appropriate email greetings and closings, and maintain a friendly, informal tone throughout.
+        `
+      break
+    case 'B1':
+      promptString += `
+        Write an engaging fable or moral tale in ${language} at a ${level} language level. The story should be 300-500 words.
+        Include animal or human characters, a clear narrative arc, and an implicit or explicit moral lesson.
+        Use a mix of common and moderately advanced vocabulary with varied sentence structures including some compound and complex sentences.
+        The story should be accessible to intermediate learners while providing some challenge.
+        `
+      break
+    case 'B2':
+      promptString += `
+        Write a compelling flash-fiction story in ${language} at a ${level} language level. The story should be 400-600 words.
+        Create a complete narrative with a clear beginning, middle, and end, featuring developed characters and an interesting plot twist or insight.
+        Use diverse vocabulary including idiomatic expressions, varied sentence structures with complex grammar, and descriptive language.
+        The story should be engaging and sophisticated enough to challenge upper-intermediate learners.
+        `
+      break
+
+    default:
+      break
   }
 
   promptString += `
