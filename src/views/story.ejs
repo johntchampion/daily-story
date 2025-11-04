@@ -9,18 +9,18 @@
 </head>
 <body>
     <div class="story">
-    <h1 class="story-title"><%= title %></h1>
-    <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
-    <% if (messages && messages.length > 0) { %>
-        <% messages.forEach((message, index) => { %>
-            <div class="message">
-                <div class="sender"><%= message.sender || 'Unknown' %></div>
-                <div><%= message.text %></div>
-            </div>
-        <% }) %>
-    <% } else if (story) { %>
-        <p><%= story %></p>
-    <% } %>
+        <h1 class="story-title"><%= title %></h1>
+        <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
+        <% if (messages && messages.length > 0) { %>
+            <% messages.forEach((message, index) => { %>
+                <div class="message">
+                    <div class="sender"><%= message.sender || 'Unknown' %></div>
+                    <div><%= message.text %></div>
+                </div>
+            <% }) %>
+        <% } else if (story) { %>
+            <p><%= story %></p>
+        <% } %>
     </div>
 
     <% if (questions && questions.length > 0) { %>

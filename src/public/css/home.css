@@ -7,6 +7,7 @@
     max-width: 500px;
     margin: auto;
     margin-top: 4rem;
+    box-sizing: border-box;
 }
 h1 {
     color: #333;
@@ -76,6 +77,50 @@ select:focus {
     color: #666;
     margin-top: 5px;
     font-style: italic;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 25px;
+        margin-top: 2rem;
+    }
+    h1 {
+        font-size: 1.75rem;
+        margin-bottom: 8px;
+    }
+    .subtitle {
+        font-size: 14px;
+        margin-bottom: 25px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    label {
+        font-size: 13px;
+    }
+    select {
+        padding: 10px;
+        font-size: 15px;
+    }
+    .submit-btn {
+        padding: 12px;
+        font-size: 16px;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .container {
+        padding: 20px;
+        margin-top: 1.5rem;
+    }
+    h1 {
+        font-size: 1.5rem;
+    }
+    .subtitle {
+        font-size: 13px;
+    }
 }
 
 @media (prefers-color-scheme: dark) {
