@@ -15,13 +15,20 @@ const app = express()
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
 
+// Track whether story generation is currently in progress
+let isGeneratingStories = false
+
 const job = CronJob.from({
   cronTime: '0 0 * * *', // Run at midnight every day
-  onTick: async () =>
-    generateDailyStories(SUPPORTED_LANGUAGES, [
-      ...EARLY_LEVELS,
-      ...INTERMEDIATE_LEVELS,
-    ]),
+  onTick: async () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return generateDailyStories(
+      SUPPORTED_LANGUAGES,
+      [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS],
+      tomorrow
+    )
+  },
   start: true,
   timeZone: 'utc',
 })
@@ -38,56 +45,97 @@ app.get('/', (_req: Request, res: Response) => {
 // Manual story generation route
 app.get('/generate-stories', async (_req: Request, res: Response) => {
   try {
-    const now = new Date()
-    const year = now.getFullYear().toString()
-    const month = (now.getMonth() + 1).toString().padStart(2, '0')
-    const day = now.getDate().toString().padStart(2, '0')
-
-    // Check if stories for today already exist by checking the first language/level combo
-    const firstLanguage = SUPPORTED_LANGUAGES[0]?.toLowerCase() || 'spanish'
-    const firstLevel = EARLY_LEVELS[0]?.toLowerCase() || 'a1'
-
-    const sampleFilePath = path.join(
-      process.cwd(),
-      'stories',
-      year,
-      month,
-      day,
-      firstLanguage,
-      firstLevel,
-      'story.json'
-    )
-
-    let storiesExist = false
-    try {
-      await access(sampleFilePath)
-      storiesExist = true
-    } catch {
-      storiesExist = false
+    // Check if generation is already in progress
+    if (isGeneratingStories) {
+      res.type('text/plain')
+      res.send(
+        `Story generation is already in progress. Please wait for it to complete.`
+      )
+      return
     }
 
-    if (storiesExist) {
-      res.type('text/plain')
-      res.send(
-        `Stories for ${year}-${month}-${day} have already been generated.`
-      )
-    } else {
-      // Start generation process
-      res.type('text/plain')
-      res.send(
-        `Starting story generation for ${year}-${month}-${day}. This may take a few minutes...`
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    // Helper function to check if stories exist for a given date
+    const checkStoriesExist = async (date: Date): Promise<boolean> => {
+      const year = date.getFullYear().toString()
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const day = date.getDate().toString().padStart(2, '0')
+
+      const firstLanguage = SUPPORTED_LANGUAGES[0]?.toLowerCase() || 'spanish'
+      const firstLevel = EARLY_LEVELS[0]?.toLowerCase() || 'a1'
+
+      const sampleFilePath = path.join(
+        process.cwd(),
+        'stories',
+        year,
+        month,
+        day,
+        firstLanguage,
+        firstLevel,
+        'story.json'
       )
 
-      // Trigger generation in the background
-      generateDailyStories(SUPPORTED_LANGUAGES, [
-        ...EARLY_LEVELS,
-        ...INTERMEDIATE_LEVELS,
-      ])
+      try {
+        await access(sampleFilePath)
+        return true
+      } catch {
+        return false
+      }
+    }
+
+    // Helper function to format date as YYYY-MM-DD
+    const formatDate = (date: Date): string => {
+      const year = date.getFullYear().toString()
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const day = date.getDate().toString().padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    // Check which stories need to be generated
+    const todayExists = await checkStoriesExist(now)
+    const tomorrowExists = await checkStoriesExist(tomorrow)
+
+    const datesToGenerate: Date[] = []
+    if (!todayExists) datesToGenerate.push(now)
+    if (!tomorrowExists) datesToGenerate.push(tomorrow)
+
+    if (datesToGenerate.length === 0) {
+      res.type('text/plain')
+      res.send(
+        `Stories for today (${formatDate(now)}) and tomorrow (${formatDate(
+          tomorrow
+        )}) have already been generated.`
+      )
+    } else {
+      // Set flag to prevent concurrent generation
+      isGeneratingStories = true
+
+      const dateStrings = datesToGenerate.map(formatDate).join(' and ')
+      res.type('text/plain')
+      res.send(
+        `Starting story generation for ${dateStrings}. This may take a few minutes...`
+      )
+
+      // Trigger generation in the background for each date
+      Promise.all(
+        datesToGenerate.map((date) =>
+          generateDailyStories(
+            SUPPORTED_LANGUAGES,
+            [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS],
+            date
+          )
+        )
+      )
         .then(() => {
-          console.log(`Story generation completed for ${year}-${month}-${day}`)
+          console.log(`Story generation completed for ${dateStrings}`)
+          isGeneratingStories = false
         })
         .catch((error) => {
           console.error('Error during story generation:', error)
+          isGeneratingStories = false
         })
     }
   } catch (error) {
