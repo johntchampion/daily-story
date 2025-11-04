@@ -115,7 +115,7 @@ const getPrompt = (language: string, level: string) => {
         Create an informal email exchange in ${language} at a ${level} language level between two people (friends, classmates, or casual acquaintances) discussing a relatable topic (planning an event, asking for advice, sharing experiences, etc.).
         Write at least 10 emails total, alternating between the two people. Don't include a greeting or closing in any of the emails; only write the body text.
         Use simple vocabulary with some basic connectors and complete sentences suitable for elementary learners.
-        Include appropriate email greetings and closings, and maintain a friendly, informal tone throughout.
+        Maintain a friendly, informal tone throughout.
         `
       break
     case 'B1':
