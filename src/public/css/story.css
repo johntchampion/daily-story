@@ -86,6 +86,59 @@
     color: #007bff;
 }
 
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .story {
+        padding: 1.5rem 1.25rem;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+    }
+    .story-title {
+        font-size: 1.5rem;
+    }
+    .story-date {
+        font-size: 0.9rem;
+    }
+    .message {
+        margin-bottom: 12px;
+        padding: 10px 12px;
+    }
+    .question {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    .question h3 {
+        font-size: 1.1rem;
+    }
+    .options li {
+        padding: 12px;
+        margin: 8px 0;
+        font-size: 1rem;
+    }
+    .bookmark-message {
+        margin-top: 30px;
+        font-size: 1rem;
+        padding: 0 10px;
+    }
+    .home-link-container {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .story {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    .story-title {
+        font-size: 1.3rem;
+    }
+    .question h3 {
+        font-size: 1rem;
+    }
+}
+
 @media (prefers-color-scheme: dark) {
     .story {
         background-color: #2a2a2a;
