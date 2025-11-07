@@ -3,20 +3,22 @@ import path from 'path'
 import express, { Request, Response } from 'express'
 import { readFile, access } from 'fs/promises'
 import {
-  generateDailyStories,
+  StoryGenerationService,
   SUPPORTED_LANGUAGES,
   EARLY_LEVELS,
   INTERMEDIATE_LEVELS,
   StoryContent,
-} from './util'
+} from './storyService'
+
+// Initialize the story generation service
+const storyService = new StoryGenerationService(
+  process.env.ANTHROPIC_API_KEY || ''
+)
 
 const app = express()
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
 app.use(express.static(path.join(__dirname, 'public')))
-
-// Track whether story generation is currently in progress
-let isGeneratingStories = false
 
 // Home page route
 app.get('/', (_req: Request, res: Response) => {
@@ -31,7 +33,7 @@ app.get('/', (_req: Request, res: Response) => {
 app.get('/generate-stories', async (_req: Request, res: Response) => {
   try {
     // Check if generation is already in progress
-    if (isGeneratingStories) {
+    if (storyService.isGeneratingStories()) {
       res.type('text/plain')
       res.send(
         `Story generation is already in progress. Please wait for it to complete.`
@@ -95,9 +97,6 @@ app.get('/generate-stories', async (_req: Request, res: Response) => {
         )}) have already been generated.`
       )
     } else {
-      // Set flag to prevent concurrent generation
-      isGeneratingStories = true
-
       const dateStrings = datesToGenerate.map(formatDate).join(' and ')
       res.type('text/plain')
       res.send(
@@ -107,7 +106,7 @@ app.get('/generate-stories', async (_req: Request, res: Response) => {
       // Trigger generation in the background for each date
       Promise.all(
         datesToGenerate.map((date) =>
-          generateDailyStories(
+          storyService.generateDailyStories(
             SUPPORTED_LANGUAGES,
             [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS],
             date
@@ -116,11 +115,9 @@ app.get('/generate-stories', async (_req: Request, res: Response) => {
       )
         .then(() => {
           console.log(`Story generation completed for ${dateStrings}`)
-          isGeneratingStories = false
         })
         .catch((error) => {
           console.error('Error during story generation:', error)
-          isGeneratingStories = false
         })
     }
   } catch (error) {
@@ -216,7 +213,8 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
       messages: content.messages,
       questions: content.questions,
       language:
-        normalizedLanguage.charAt(0).toUpperCase() + normalizedLanguage.slice(1),
+        normalizedLanguage.charAt(0).toUpperCase() +
+        normalizedLanguage.slice(1),
       level: normalizedLevel,
       date: now.toLocaleDateString(undefined, {
         weekday: 'long',
