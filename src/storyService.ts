@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { mkdir, writeFile } from 'fs/promises'
+import { mkdir, writeFile, access } from 'fs/promises'
 import path from 'path'
 
 export type StoryContent = {
@@ -197,7 +197,7 @@ export const NARRATIVE_THEMES = [
   'learning from mistakes',
   'an unexpected mentor',
   'the cost of deception',
-  'finding one\'s true calling',
+  "finding one's true calling",
   'a test of character',
   'the value of perseverance',
   'an old wound reopened',
@@ -243,9 +243,7 @@ export const selectThemesForDate = (
 ): { conversational: string; narrative: string } => {
   // Create a seed from the date (YYYYMMDD format)
   const seed =
-    date.getFullYear() * 10000 +
-    (date.getMonth() + 1) * 100 +
-    date.getDate()
+    date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
   // Use seed to select indices
   const conversationalIndex = Math.floor(
@@ -263,14 +261,248 @@ export const selectThemesForDate = (
 
 export class StoryGenerationService {
   private readonly client: Anthropic
-  private isGenerating = false
 
   constructor(apiKey: string) {
     this.client = new Anthropic({ apiKey })
   }
 
-  isGeneratingStories(): boolean {
-    return this.isGenerating
+  /**
+   * List the most recent message batches from the API (limit: 2)
+   */
+  async listBatches(): Promise<Anthropic.Messages.MessageBatch[]> {
+    try {
+      const page = await this.client.messages.batches.list({ limit: 2 })
+      return page.data
+    } catch (error) {
+      console.error(
+        'Error listing batches:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return []
+    }
+  }
+
+  /**
+   * Check if stories for a specific date already exist on disk
+   */
+  async checkStoriesExistForDate(date: Date): Promise<boolean> {
+    const year = date.getFullYear().toString()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+
+    const firstLanguage = SUPPORTED_LANGUAGES[0]?.toLowerCase() || 'spanish'
+    const firstLevel = EARLY_LEVELS[0]?.toLowerCase() || 'a1'
+
+    const sampleFilePath = path.join(
+      process.cwd(),
+      'stories',
+      year,
+      month,
+      day,
+      firstLanguage,
+      firstLevel,
+      'story.json'
+    )
+
+    try {
+      await access(sampleFilePath)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Check if there's already an in-progress batch
+   * Returns the batch ID if found, null otherwise
+   */
+  async checkInProgressBatch(): Promise<string | null> {
+    try {
+      const batches = await this.listBatches()
+
+      // Find any batch that is in progress
+      const inProgressBatch = batches.find(
+        (batch) => batch.processing_status === 'in_progress'
+      )
+
+      return inProgressBatch ? inProgressBatch.id : null
+    } catch (error) {
+      console.error(
+        'Error checking for in-progress batches:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return null
+    }
+  }
+
+  /**
+   * Process the results of a single completed batch
+   */
+  private async processBatchResults(batchId: string): Promise<void> {
+    console.log(`Processing results for batch ${batchId}...`)
+
+    try {
+      const results = await this.client.messages.batches.results(batchId)
+
+      for await (const result of results) {
+        if (result.result.type === 'succeeded') {
+          // Parse custom_id format: YYYYMMDD-language-level
+          const parts = result.custom_id.split('-')
+          const dateStr = parts[0]
+          const language = parts[1]
+          const level = parts[2]
+
+          if (!dateStr || !language || !level || dateStr.length !== 8) {
+            console.error(`Invalid custom_id format: ${result.custom_id}`)
+            continue
+          }
+
+          // Extract date components from custom_id
+          const resultYear = dateStr.substring(0, 4)
+          const resultMonth = dateStr.substring(4, 6)
+          const resultDay = dateStr.substring(6, 8)
+
+          try {
+            const responseText: string =
+              (result.result.message.content?.[0] as any)?.text ?? '{}'
+            const cleanedResponse =
+              StoryGenerationService.cleanJsonString(responseText)
+            const story = JSON.parse(cleanedResponse) as StoryContent
+
+            console.log(
+              `Processed story for ${language} at ${level} (${dateStr})`
+            )
+
+            // Save story to file using date from custom_id
+            const dirPath = path.join(
+              process.cwd(),
+              'stories',
+              resultYear,
+              resultMonth,
+              resultDay,
+              language,
+              level
+            )
+            await mkdir(dirPath, { recursive: true })
+
+            const filePath = path.join(dirPath, 'story.json')
+            await writeFile(filePath, JSON.stringify(story, null, 2), 'utf-8')
+            console.log(`Saved story to ${filePath}`)
+          } catch (error) {
+            console.error(
+              `Error processing story for ${language} at ${level}:`,
+              error instanceof Error ? error.message : 'Unknown error'
+            )
+          }
+        } else if (result.result.type === 'errored') {
+          const errorMsg =
+            typeof result.result.error === 'object'
+              ? JSON.stringify(result.result.error)
+              : String(result.result.error)
+          console.error(
+            `Failed to generate story for ${result.custom_id}: ${errorMsg}`
+          )
+        } else {
+          console.error(
+            `Failed to generate story for ${result.custom_id}: ${result.result.type}`
+          )
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error processing batch ${batchId}:`,
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+    }
+  }
+
+  /**
+   * Find and process any completed batches that haven't been processed yet
+   */
+  async processCompletedBatches(): Promise<{
+    processed: number
+    errors: number
+  }> {
+    console.log('Checking for completed batches to process...')
+
+    try {
+      const batches = await this.listBatches()
+      let processed = 0
+      let errors = 0
+
+      // Filter for batches that are completed (ended) but might not have been processed
+      const completedBatches = batches.filter(
+        (batch) => batch.processing_status === 'ended'
+      )
+
+      console.log(`Found ${completedBatches.length} completed batches`)
+
+      for (const batch of completedBatches) {
+        // To determine if this batch has been processed, we need to:
+        // 1. Get a sample result to extract the date
+        // 2. Check if stories exist for that date
+
+        try {
+          // Get the first result to extract the date
+          const results = await this.client.messages.batches.results(batch.id)
+          let sampleCustomId: string | null = null
+
+          for await (const result of results) {
+            sampleCustomId = result.custom_id
+            break // Just get the first one
+          }
+
+          if (!sampleCustomId) {
+            console.log(`Batch ${batch.id} has no results, skipping`)
+            continue
+          }
+
+          // Extract date from custom_id (format: YYYYMMDD-language-level)
+          const dateStr = sampleCustomId.split('-')[0]
+          if (!dateStr || dateStr.length !== 8) {
+            console.error(
+              `Invalid custom_id format in batch ${batch.id}: ${sampleCustomId}`
+            )
+            errors++
+            continue
+          }
+
+          const year = parseInt(dateStr.substring(0, 4))
+          const month = parseInt(dateStr.substring(4, 6)) - 1 // JS months are 0-indexed
+          const day = parseInt(dateStr.substring(6, 8))
+          const batchDate = new Date(year, month, day)
+
+          // Check if stories already exist for this date
+          const storiesExist = await this.checkStoriesExistForDate(batchDate)
+
+          if (storiesExist) {
+            console.log(
+              `Stories for ${dateStr} already exist, skipping batch ${batch.id}`
+            )
+            continue
+          }
+
+          // Process this batch
+          console.log(`Processing batch ${batch.id} for date ${dateStr}`)
+          await this.processBatchResults(batch.id)
+          processed++
+        } catch (error) {
+          console.error(
+            `Error checking/processing batch ${batch.id}:`,
+            error instanceof Error ? error.message : 'Unknown error'
+          )
+          errors++
+        }
+      }
+
+      return { processed, errors }
+    } catch (error) {
+      console.error(
+        'Error in processCompletedBatches:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return { processed: 0, errors: 1 }
+    }
   }
 
   async generateStory(
@@ -290,7 +522,10 @@ export class StoryGenerationService {
     const response = await this.client.messages.create({
       model: 'claude-sonnet-4-5',
       messages: [
-        { role: 'user', content: this.getPrompt(language, level, selectedTheme) },
+        {
+          role: 'user',
+          content: this.getPrompt(language, level, selectedTheme),
+        },
       ],
       max_tokens: 4096,
     })
@@ -305,136 +540,67 @@ export class StoryGenerationService {
     languages: string[],
     levels: string[],
     targetDate?: Date
-  ): Promise<void> {
-    if (this.isGenerating) {
-      throw new Error('Story generation is already in progress')
+  ): Promise<string> {
+    console.log('Generating daily stories using Message Batches API...')
+
+    const date = targetDate || new Date()
+    const year = date.getFullYear().toString()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+
+    // Check if there's already an in-progress batch
+    const existingBatchId = await this.checkInProgressBatch()
+    if (existingBatchId) {
+      console.log(
+        `Batch ${existingBatchId} is already in progress. Skipping new batch creation.`
+      )
+      return existingBatchId
     }
 
-    this.isGenerating = true
+    // Select themes for this date
+    const themes = selectThemesForDate(date)
+    console.log(`Selected themes for ${year}-${month}-${day}:`)
+    console.log(`  Conversational (A1/A2): ${themes.conversational}`)
+    console.log(`  Narrative (B1/B2): ${themes.narrative}`)
 
-    try {
-      console.log('Generating daily stories using Message Batches API...')
+    // Create batch requests
+    const batchRequests = []
+    for (const language of languages) {
+      for (const level of levels) {
+        // Select appropriate theme based on level
+        const theme = EARLY_LEVELS.includes(level)
+          ? themes.conversational
+          : themes.narrative
 
-      const date = targetDate || new Date()
-      const year = date.getFullYear().toString()
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const day = date.getDate().toString().padStart(2, '0')
-
-      // Select themes for this date
-      const themes = selectThemesForDate(date)
-      console.log(`Selected themes for ${year}-${month}-${day}:`)
-      console.log(`  Conversational (A1/A2): ${themes.conversational}`)
-      console.log(`  Narrative (B1/B2): ${themes.narrative}`)
-
-      // Create batch requests
-      const batchRequests = []
-      for (const language of languages) {
-        for (const level of levels) {
-          // Select appropriate theme based on level
-          const theme = EARLY_LEVELS.includes(level)
-            ? themes.conversational
-            : themes.narrative
-
-          batchRequests.push({
-            custom_id: `${language.toLowerCase()}-${level.toLowerCase()}`,
-            params: {
-              model: 'claude-sonnet-4-5',
-              messages: [
-                {
-                  role: 'user' as const,
-                  content: this.getPrompt(language, level, theme),
-                },
-              ],
-              max_tokens: 4096,
-            },
-          })
-        }
+        batchRequests.push({
+          custom_id: `${year}${month}${day}-${language.toLowerCase()}-${level.toLowerCase()}`,
+          params: {
+            model: 'claude-sonnet-4-5',
+            messages: [
+              {
+                role: 'user' as const,
+                content: this.getPrompt(language, level, theme),
+              },
+            ],
+            max_tokens: 4096,
+          },
+        })
       }
-
-      console.log(`Creating batch with ${batchRequests.length} requests...`)
-
-      // Create the batch
-      const batch = await this.client.messages.batches.create({
-        requests: batchRequests,
-      })
-
-      console.log(`Batch created with ID: ${batch.id}`)
-      console.log('Polling for completion...')
-
-      // Poll for completion
-      let completedBatch = await this.client.messages.batches.retrieve(batch.id)
-      while (completedBatch.processing_status === 'in_progress') {
-        await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait 5 seconds
-        completedBatch = await this.client.messages.batches.retrieve(batch.id)
-        console.log(`Batch status: ${completedBatch.processing_status}`)
-      }
-
-      if (completedBatch.processing_status === 'canceling') {
-        throw new Error('Batch was canceled')
-      }
-
-      console.log('Batch completed! Processing results...')
-
-      // Retrieve and process results
-      const results = await this.client.messages.batches.results(batch.id)
-
-      for await (const result of results) {
-        if (result.result.type === 'succeeded') {
-          const parts = result.custom_id.split('-')
-          const language = parts[0]
-          const level = parts[1]
-
-          if (!language || !level) {
-            console.error(`Invalid custom_id format: ${result.custom_id}`)
-            continue
-          }
-
-          try {
-            const responseText: string =
-              (result.result.message.content?.[0] as any)?.text ?? '{}'
-            const cleanedResponse =
-              StoryGenerationService.cleanJsonString(responseText)
-            const story = JSON.parse(cleanedResponse) as StoryContent
-
-            console.log(`Processed story for ${language} at ${level}`)
-
-            // Save story to file
-            const dirPath = path.join(
-              process.cwd(),
-              'stories',
-              year,
-              month,
-              day,
-              language,
-              level
-            )
-            await mkdir(dirPath, { recursive: true })
-
-            const filePath = path.join(dirPath, 'story.json')
-            await writeFile(filePath, JSON.stringify(story, null, 2), 'utf-8')
-            console.log(`Saved story to ${filePath}`)
-          } catch (error) {
-            console.error(
-              `Error processing story for ${language} at ${level}:`,
-              error
-            )
-          }
-        } else if (result.result.type === 'errored') {
-          console.error(
-            `Failed to generate story for ${result.custom_id}:`,
-            result.result.error
-          )
-        } else {
-          console.error(
-            `Failed to generate story for ${result.custom_id}: ${result.result.type}`
-          )
-        }
-      }
-
-      console.log('All stories generated and saved!')
-    } finally {
-      this.isGenerating = false
     }
+
+    console.log(`Creating batch with ${batchRequests.length} requests...`)
+
+    // Create the batch
+    const batch = await this.client.messages.batches.create({
+      requests: batchRequests,
+    })
+
+    console.log(`Batch created with ID: ${batch.id}`)
+    console.log(
+      'Batch created successfully. Processing will happen asynchronously.'
+    )
+
+    return batch.id
   }
 
   private getResponseFormat(
@@ -563,7 +729,9 @@ export class StoryGenerationService {
 
     // Remove markdown code fences - look for ```json or ``` at start
     // and ``` at end, capturing everything in between
-    const markdownMatch = cleaned.match(/^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/m)
+    const markdownMatch = cleaned.match(
+      /^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/m
+    )
     if (markdownMatch && markdownMatch[1]) {
       cleaned = markdownMatch[1]
     }
