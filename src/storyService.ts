@@ -363,11 +363,16 @@ export class StoryGenerationService {
           const resultDay = dateStr.substring(6, 8)
 
           try {
-            const responseText: string =
-              (result.result.message.content?.[0] as any)?.text ?? '{}'
-            const cleanedResponse =
-              StoryGenerationService.cleanJsonString(responseText)
-            const story = JSON.parse(cleanedResponse) as StoryContent
+            // Extract the tool use from the response
+            const toolUse = result.result.message.content?.find(
+              (block) => block.type === 'tool_use'
+            )
+
+            if (!toolUse || toolUse.type !== 'tool_use') {
+              throw new Error('No tool use found in batch response')
+            }
+
+            const story = toolUse.input as StoryContent
 
             console.log(
               `Processed story for ${language} at ${level} (${dateStr})`
@@ -528,12 +533,17 @@ export class StoryGenerationService {
         },
       ],
       max_tokens: 4096,
+      tools: [this.getStoryTool(language, level)],
+      tool_choice: { type: 'tool', name: 'create_story' },
     })
 
-    const responseText: string = (response.content?.[0] as any)?.text ?? '{}'
-    const cleanedResponse = StoryGenerationService.cleanJsonString(responseText)
+    // Extract the tool use from the response
+    const toolUse = response.content.find((block) => block.type === 'tool_use')
+    if (!toolUse || toolUse.type !== 'tool_use') {
+      throw new Error('No tool use found in response')
+    }
 
-    return JSON.parse(cleanedResponse) as StoryContent
+    return toolUse.input as StoryContent
   }
 
   async generateDailyStories(
@@ -583,6 +593,8 @@ export class StoryGenerationService {
               },
             ],
             max_tokens: 4096,
+            tools: [this.getStoryTool(language, level)],
+            tool_choice: { type: 'tool' as const, name: 'create_story' },
           },
         })
       }
@@ -603,74 +615,123 @@ export class StoryGenerationService {
     return batch.id
   }
 
-  private getResponseFormat(
-    language: string,
-    level: string,
-    questionLanguage: string
-  ): string {
+  private getStoryTool(language: string, level: string): Anthropic.Tool {
     const isEarlyLevel = EARLY_LEVELS.includes(level)
+    const questionLanguage = isEarlyLevel ? 'English' : language
 
     if (isEarlyLevel) {
-      return `
-    You must respond with valid JSON in exactly this format:
-    {
-      "title": "The conversation title in ${language}",
-      "messages": [
-        { "text": "Message text in ${language}", "sender": "Person 1" },
-        { "text": "Message text in ${language}", "sender": "Person 2" },
-        { "text": "Message text in ${language}", "sender": "Person 1" }
-      ],
-      "questions": [
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0
+      return {
+        name: 'create_story',
+        description: `Create a ${level} level conversational story in ${language}`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: `The conversation title in ${language}`,
+            },
+            messages: {
+              type: 'array',
+              description: `Array of at least 10 message objects in the conversation`,
+              items: {
+                type: 'object',
+                properties: {
+                  text: {
+                    type: 'string',
+                    description: `The message text in ${language}`,
+                  },
+                  sender: {
+                    type: 'string',
+                    description: 'The name of the person sending the message',
+                  },
+                },
+                required: ['text', 'sender'],
+              },
+              minItems: 10,
+            },
+            questions: {
+              type: 'array',
+              description: `Array of exactly 3 comprehension questions in ${questionLanguage}`,
+              items: {
+                type: 'object',
+                properties: {
+                  question: {
+                    type: 'string',
+                    description: `The question text in ${questionLanguage}`,
+                  },
+                  options: {
+                    type: 'array',
+                    description: 'Array of exactly 4 answer options',
+                    items: { type: 'string' },
+                    minItems: 4,
+                    maxItems: 4,
+                  },
+                  correctAnswer: {
+                    type: 'number',
+                    description:
+                      'The index (0-3) of the correct answer in the options array',
+                    minimum: 0,
+                    maximum: 3,
+                  },
+                },
+                required: ['question', 'options', 'correctAnswer'],
+              },
+              minItems: 3,
+              maxItems: 3,
+            },
+          },
+          required: ['title', 'messages', 'questions'],
         },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 1
-        },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 2
-        }
-      ]
-    }
-
-    The messages array should contain at least 10 message objects with "text" and "sender" properties.
-    The correctAnswer field should be the index (0-3) of the correct option.
-    IMPORTANT: Respond ONLY with the raw JSON object. Do NOT wrap it in markdown code blocks or backticks.
-    `
+      }
     } else {
-      return `
-    You must respond with valid JSON in exactly this format:
-    {
-      "title": "The story title in ${language}",
-      "story": "The complete story text in ${language}",
-      "questions": [
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0
+      return {
+        name: 'create_story',
+        description: `Create a ${level} level narrative story in ${language}`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: `The story title in ${language}`,
+            },
+            story: {
+              type: 'string',
+              description: `The complete story text in ${language}`,
+            },
+            questions: {
+              type: 'array',
+              description: `Array of exactly 3 comprehension questions in ${questionLanguage}`,
+              items: {
+                type: 'object',
+                properties: {
+                  question: {
+                    type: 'string',
+                    description: `The question text in ${questionLanguage}`,
+                  },
+                  options: {
+                    type: 'array',
+                    description: 'Array of exactly 4 answer options',
+                    items: { type: 'string' },
+                    minItems: 4,
+                    maxItems: 4,
+                  },
+                  correctAnswer: {
+                    type: 'number',
+                    description:
+                      'The index (0-3) of the correct answer in the options array',
+                    minimum: 0,
+                    maximum: 3,
+                  },
+                },
+                required: ['question', 'options', 'correctAnswer'],
+              },
+              minItems: 3,
+              maxItems: 3,
+            },
+          },
+          required: ['title', 'story', 'questions'],
         },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 1
-        },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 2
-        }
-      ]
-    }
-
-    The correctAnswer field should be the index (0-3) of the correct option.
-    IMPORTANT: Respond ONLY with the raw JSON object. Do NOT wrap it in markdown code blocks or backticks.
-    `
+      }
     }
   }
 
@@ -680,116 +741,50 @@ export class StoryGenerationService {
 
     switch (level) {
       case 'A1':
-        promptString += `
-        Create a casual text message conversation in ${language} at a ${level} language level between two people about: ${theme}.
-        Write at least 10 alternating messages with natural back-and-forth exchanges.
-        Use only simple, common vocabulary and short sentences (5-10 words per message) appropriate for absolute beginners.
-        Include greetings, questions, and responses that feel natural and conversational.
-        `
+        promptString = `Create a casual text message conversation in ${language} at a ${level} language level between two people about: ${theme}.
+
+Write at least 10 alternating messages with natural back-and-forth exchanges.
+Use only simple, common vocabulary and short sentences (5-10 words per message) appropriate for absolute beginners.
+Include greetings, questions, and responses that feel natural and conversational.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
+
       case 'A2':
-        promptString += `
-        Create an informal email exchange in ${language} at a ${level} language level between two people (friends, classmates, or casual acquaintances) about: ${theme}.
-        Write at least 10 emails total, alternating between the two people. Don't include a greeting or closing in any of the emails; only write the body text.
-        Use simple vocabulary with some basic connectors and complete sentences suitable for elementary learners.
-        Maintain a friendly, informal tone throughout.
-        `
+        promptString = `Create an informal email exchange in ${language} at a ${level} language level between two people (friends, classmates, or casual acquaintances) about: ${theme}.
+
+Write at least 10 emails total, alternating between the two people. Don't include a greeting or closing in any of the emails; only write the body text.
+Use simple vocabulary with some basic connectors and complete sentences suitable for elementary learners.
+Maintain a friendly, informal tone throughout.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
+
       case 'B1':
-        promptString += `
-        Write an engaging fable or moral tale in ${language} at a ${level} language level with the theme: ${theme}.
-        The story should be 300-500 words and include animal or human characters with a clear narrative arc.
-        Use a mix of common and moderately advanced vocabulary with varied sentence structures including some compound and complex sentences.
-        The story should be accessible to intermediate learners while providing some challenge.
-        `
+        promptString = `Write an engaging fable or moral tale in ${language} at a ${level} language level with the theme: ${theme}.
+
+The story should be 300-500 words and include animal or human characters with a clear narrative arc.
+Use a mix of common and moderately advanced vocabulary with varied sentence structures including some compound and complex sentences.
+The story should be accessible to intermediate learners while providing some challenge.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
+
       case 'B2':
-        promptString += `
-        Write a compelling flash-fiction story in ${language} at a ${level} language level with the theme: ${theme}.
-        The story should be 400-600 words with a complete narrative featuring developed characters and an interesting plot twist or insight.
-        Use diverse vocabulary including idiomatic expressions, varied sentence structures with complex grammar, and descriptive language.
-        The story should be engaging and sophisticated enough to challenge upper-intermediate learners.
-        `
+        promptString = `Write a compelling flash-fiction story in ${language} at a ${level} language level with the theme: ${theme}.
+
+The story should be 400-600 words with a complete narrative featuring developed characters and an interesting plot twist or insight.
+Use diverse vocabulary including idiomatic expressions, varied sentence structures with complex grammar, and descriptive language.
+The story should be engaging and sophisticated enough to challenge upper-intermediate learners.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
 
       default:
+        promptString = 'Invalid level'
         break
     }
 
-    promptString += `
-    Then create a title and three multiple-choice questions to quiz the reader's comprehension.
-    ${this.getResponseFormat(language, level, questionLanguage)}
-  `
-
     return promptString
-  }
-
-  private static cleanJsonString(string: string): string {
-    let cleaned = string.trim()
-
-    // Remove markdown code fences - look for ```json or ``` at start
-    // and ``` at end, capturing everything in between
-    const markdownMatch = cleaned.match(
-      /^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/m
-    )
-    if (markdownMatch && markdownMatch[1]) {
-      cleaned = markdownMatch[1]
-    }
-
-    // If there's still a leading ``` without the ending captured, remove it
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/gim, '')
-    cleaned = cleaned.replace(/\n?```\s*$/gim, '')
-
-    // Replace smart quotes with straight ones
-    // Include: " " (U+201C, U+201D), „ (U+201E - German low quote), ‟ (U+201F)
-    cleaned = cleaned.replace(/[""„‟]/g, '"')
-    cleaned = cleaned.replace(/[''‚‛]/g, "'")
-
-    // Fix unescaped quotes within JSON string values
-    // Process line by line to handle dialogue quotes in stories
-    const lines = cleaned.split('\n')
-    cleaned = lines
-      .map((line) => {
-        // Skip empty lines or structural JSON
-        if (/^\s*[{}\[\],]?\s*$/.test(line)) {
-          return line
-        }
-
-        // Check if this line contains a string property with value
-        // Pattern: "property": "value..."
-        const match = line.match(/^(\s*"[^"]+"\s*:\s*")(.*?)(",?\s*)$/)
-        if (!match || !match[1] || !match[2] || !match[3]) {
-          return line // Not a simple property: value line
-        }
-
-        const prefix = match[1] // e.g., '  "story": "'
-        const content = match[2] // the actual value content
-        const suffix = match[3] // '",\n' or '"\n'
-
-        // In the content, escape any unescaped quotes
-        let escaped = ''
-        for (let i = 0; i < content.length; i++) {
-          const char = content[i]
-          if (char === '\\' && i + 1 < content.length) {
-            // Already escaped, keep both characters
-            const nextChar = content[i + 1]
-            escaped += char + nextChar
-            i++ // skip next char
-          } else if (char === '"') {
-            // Unescaped quote - escape it
-            escaped += '\\"'
-          } else {
-            escaped += char
-          }
-        }
-
-        return prefix + escaped + suffix
-      })
-      .join('\n')
-
-    // Remove trailing commas before } or ]
-    cleaned = cleaned.replace(/,\s*([}\]])/g, '$1')
-
-    return cleaned.trim()
   }
 }
