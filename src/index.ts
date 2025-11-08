@@ -29,6 +29,11 @@ app.get('/', (_req: Request, res: Response) => {
   })
 })
 
+// About page route
+app.get('/about', (_req: Request, res: Response) => {
+  res.render('about')
+})
+
 // Manual story generation route
 app.get('/generate-stories', async (_req: Request, res: Response) => {
   try {

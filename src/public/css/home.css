@@ -1,28 +1,39 @@
+/* Page-specific container size */
 .container {
-    background-color: white;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 100%;
     max-width: 500px;
-    margin: auto;
     margin-top: 4rem;
-    box-sizing: border-box;
 }
+
+/* Page-specific heading adjustments */
 h1 {
-    color: #333;
-    text-align: center;
     margin-bottom: 10px;
 }
+
 .subtitle {
     text-align: center;
     color: #666;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     font-size: 16px;
 }
+
+.about-link-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.about-link {
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.about-link:hover {
+    text-decoration: underline;
+}
+
 .form-group {
     margin-bottom: 25px;
 }
+
 label {
     display: block;
     margin-bottom: 8px;
@@ -30,6 +41,7 @@ label {
     font-weight: bold;
     font-size: 14px;
 }
+
 select {
     width: 100%;
     padding: 12px;
@@ -40,14 +52,17 @@ select {
     color: #333;
     cursor: pointer;
 }
+
 select:hover {
     border-color: #667eea;
 }
+
 select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
+
 .submit-btn {
     width: 100%;
     padding: 14px;
@@ -60,18 +75,22 @@ select:focus {
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .submit-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 }
+
 .submit-btn:active {
     transform: translateY(0);
 }
+
 .submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
 }
+
 .level-info {
     font-size: 12px;
     color: #666;
@@ -85,24 +104,30 @@ select:focus {
         padding: 25px;
         margin-top: 2rem;
     }
+
     h1 {
         font-size: 1.75rem;
         margin-bottom: 8px;
     }
+
     .subtitle {
         font-size: 14px;
         margin-bottom: 25px;
     }
+
     .form-group {
         margin-bottom: 20px;
     }
+
     label {
         font-size: 13px;
     }
+
     select {
         padding: 10px;
         font-size: 15px;
     }
+
     .submit-btn {
         padding: 12px;
         font-size: 16px;
@@ -115,40 +140,41 @@ select:focus {
         padding: 20px;
         margin-top: 1.5rem;
     }
+
     h1 {
         font-size: 1.5rem;
     }
+
     .subtitle {
         font-size: 13px;
     }
 }
 
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
-    .container {
-        background-color: #2a2a2a;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    }
-    h1 {
-        color: #e0e0e0;
-    }
     .subtitle {
         color: #b0b0b0;
     }
+
     label {
         color: #e0e0e0;
     }
+
     select {
         background-color: #3a3a3a;
         color: #e0e0e0;
         border-color: #555;
     }
+
     select:hover {
         border-color: #667eea;
     }
+
     select:focus {
         border-color: #667eea;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
+
     .level-info {
         color: #b0b0b0;
     }

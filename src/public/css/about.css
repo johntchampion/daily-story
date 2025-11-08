@@ -1,0 +1,179 @@
+/* Page-specific heading adjustments */
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+}
+
+.about-section {
+    margin-bottom: 35px;
+}
+
+.about-section p {
+    color: #555;
+    line-height: 1.7;
+    margin: 10px 0;
+}
+
+.cefr-intro {
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* Level cards */
+.level-card {
+    background-color: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+}
+
+.level-card p {
+    margin: 8px 0;
+    font-size: 15px;
+}
+
+.level-card strong {
+    color: #333;
+}
+
+/* Lists */
+.how-to-list {
+    list-style-position: outside;
+    padding-left: 20px;
+    margin: 15px 0;
+}
+
+.how-to-list li {
+    margin: 12px 0;
+    color: #555;
+    line-height: 1.7;
+}
+
+.tips-list {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin: 15px 0;
+}
+
+.tips-list li {
+    margin: 10px 0;
+    color: #555;
+    line-height: 1.7;
+}
+
+/* Call-to-action buttons */
+.cta-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 40px;
+    justify-content: center;
+}
+
+.cta-buttons .btn {
+    min-width: 150px;
+}
+
+/* Tone down button effects for about page */
+.cta-buttons .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.cta-buttons .btn-primary:hover {
+    background: #5568d3;
+    color: white;
+    transform: none;
+    box-shadow: none;
+}
+
+.cta-buttons .btn-secondary:hover {
+    transform: none;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 25px;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .about-section {
+        margin-bottom: 30px;
+    }
+
+    .level-card {
+        padding: 15px;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+
+    .about-section p,
+    .how-to-list li,
+    .tips-list li {
+        font-size: 14px;
+    }
+
+    .level-card {
+        padding: 12px;
+    }
+
+    .level-card p {
+        font-size: 14px;
+    }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+
+    .about-section p,
+    .how-to-list li,
+    .tips-list li {
+        color: #b0b0b0;
+    }
+
+    .level-card {
+        background-color: #3a3a3a;
+        border-left-color: #8b9ef5;
+    }
+
+    .level-card strong {
+        color: #e0e0e0;
+    }
+}
