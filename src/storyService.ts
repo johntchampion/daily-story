@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { mkdir, writeFile } from 'fs/promises'
+import { mkdir, writeFile, access } from 'fs/promises'
 import path from 'path'
 
 export type StoryContent = {
@@ -197,7 +197,7 @@ export const NARRATIVE_THEMES = [
   'learning from mistakes',
   'an unexpected mentor',
   'the cost of deception',
-  'finding one\'s true calling',
+  "finding one's true calling",
   'a test of character',
   'the value of perseverance',
   'an old wound reopened',
@@ -243,9 +243,7 @@ export const selectThemesForDate = (
 ): { conversational: string; narrative: string } => {
   // Create a seed from the date (YYYYMMDD format)
   const seed =
-    date.getFullYear() * 10000 +
-    (date.getMonth() + 1) * 100 +
-    date.getDate()
+    date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
   // Use seed to select indices
   const conversationalIndex = Math.floor(
@@ -263,14 +261,242 @@ export const selectThemesForDate = (
 
 export class StoryGenerationService {
   private readonly client: Anthropic
-  private isGenerating = false
 
   constructor(apiKey: string) {
     this.client = new Anthropic({ apiKey })
   }
 
-  isGeneratingStories(): boolean {
-    return this.isGenerating
+  /**
+   * List the most recent message batches from the API (limit: 2)
+   */
+  async listBatches(): Promise<Anthropic.Messages.MessageBatch[]> {
+    try {
+      const page = await this.client.messages.batches.list({ limit: 2 })
+      return page.data
+    } catch (error) {
+      console.error(
+        'Error listing batches:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return []
+    }
+  }
+
+  /**
+   * Check if stories for a specific date already exist on disk
+   */
+  async checkStoriesExistForDate(date: Date): Promise<boolean> {
+    const year = date.getFullYear().toString()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+
+    const firstLanguage = SUPPORTED_LANGUAGES[0]?.toLowerCase() || 'spanish'
+    const firstLevel = EARLY_LEVELS[0]?.toLowerCase() || 'a1'
+
+    const sampleFilePath = path.join(
+      process.cwd(),
+      'stories',
+      year,
+      month,
+      day,
+      firstLanguage,
+      firstLevel,
+      'story.json'
+    )
+
+    try {
+      await access(sampleFilePath)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Check if there's already an in-progress batch
+   * Returns the batch ID if found, null otherwise
+   */
+  async checkInProgressBatch(): Promise<string | null> {
+    try {
+      const batches = await this.listBatches()
+
+      // Find any batch that is in progress
+      const inProgressBatch = batches.find(
+        (batch) => batch.processing_status === 'in_progress'
+      )
+
+      return inProgressBatch ? inProgressBatch.id : null
+    } catch (error) {
+      console.error(
+        'Error checking for in-progress batches:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return null
+    }
+  }
+
+  /**
+   * Find and process any completed batches that haven't been processed yet
+   */
+  async processCompletedBatches(): Promise<{
+    processed: number
+    errors: number
+  }> {
+    console.log('Checking for completed batches to process...')
+
+    try {
+      const batches = await this.listBatches()
+      let processed = 0
+      let errors = 0
+
+      // Filter for batches that are completed (ended) but might not have been processed
+      const completedBatches = batches.filter(
+        (batch) => batch.processing_status === 'ended'
+      )
+
+      console.log(`Found ${completedBatches.length} completed batches`)
+
+      for (const batch of completedBatches) {
+        try {
+          // Fetch results once and collect them into an array
+          const results = await this.client.messages.batches.results(batch.id)
+          const allResults = []
+
+          for await (const result of results) {
+            allResults.push(result)
+          }
+
+          if (allResults.length === 0) {
+            console.log(`Batch ${batch.id} has no results, skipping`)
+            continue
+          }
+
+          // Extract date from first result's custom_id (format: YYYYMMDD-language-level)
+          const sampleCustomId = allResults[0]!.custom_id
+          const dateStr = sampleCustomId.split('-')[0]
+          if (!dateStr || dateStr.length !== 8) {
+            console.error(
+              `Invalid custom_id format in batch ${batch.id}: ${sampleCustomId}`
+            )
+            errors++
+            continue
+          }
+
+          const year = parseInt(dateStr.substring(0, 4))
+          const month = parseInt(dateStr.substring(4, 6)) - 1 // JS months are 0-indexed
+          const day = parseInt(dateStr.substring(6, 8))
+          const batchDate = new Date(year, month, day)
+
+          // Check if stories already exist for this date
+          const storiesExist = await this.checkStoriesExistForDate(batchDate)
+
+          if (storiesExist) {
+            console.log(
+              `Stories for ${dateStr} already exist, skipping batch ${batch.id}`
+            )
+            continue
+          }
+
+          // Process all results in this batch
+          console.log(`Processing batch ${batch.id} for date ${dateStr}`)
+
+          for (const result of allResults) {
+            if (result.result.type === 'succeeded') {
+              // Parse custom_id format: YYYYMMDD-language-level
+              const parts = result.custom_id.split('-')
+              const resultDateStr = parts[0]
+              const language = parts[1]
+              const level = parts[2]
+
+              if (
+                !resultDateStr ||
+                !language ||
+                !level ||
+                resultDateStr.length !== 8
+              ) {
+                console.error(`Invalid custom_id format: ${result.custom_id}`)
+                continue
+              }
+
+              // Extract date components from custom_id
+              const resultYear = resultDateStr.substring(0, 4)
+              const resultMonth = resultDateStr.substring(4, 6)
+              const resultDay = resultDateStr.substring(6, 8)
+
+              try {
+                // Extract the tool use from the response
+                const toolUse = result.result.message.content?.find(
+                  (block) => block.type === 'tool_use'
+                )
+
+                if (!toolUse || toolUse.type !== 'tool_use') {
+                  throw new Error('No tool use found in batch response')
+                }
+
+                const story = toolUse.input as StoryContent
+
+                console.log(
+                  `Processed story for ${language} at ${level} (${resultDateStr})`
+                )
+
+                // Save story to file using date from custom_id
+                const dirPath = path.join(
+                  process.cwd(),
+                  'stories',
+                  resultYear,
+                  resultMonth,
+                  resultDay,
+                  language,
+                  level
+                )
+                await mkdir(dirPath, { recursive: true })
+
+                const filePath = path.join(dirPath, 'story.json')
+                await writeFile(
+                  filePath,
+                  JSON.stringify(story, null, 2),
+                  'utf-8'
+                )
+                console.log(`Saved story to ${filePath}`)
+              } catch (error) {
+                console.error(
+                  `Error processing story for ${language} at ${level}:`,
+                  error instanceof Error ? error.message : 'Unknown error'
+                )
+              }
+            } else if (result.result.type === 'errored') {
+              const errorMsg =
+                typeof result.result.error === 'object'
+                  ? JSON.stringify(result.result.error)
+                  : String(result.result.error)
+              console.error(
+                `Failed to generate story for ${result.custom_id}: ${errorMsg}`
+              )
+            } else {
+              console.error(
+                `Failed to generate story for ${result.custom_id}: ${result.result.type}`
+              )
+            }
+          }
+
+          processed++
+        } catch (error) {
+          console.error(
+            `Error checking/processing batch ${batch.id}:`,
+            error instanceof Error ? error.message : 'Unknown error'
+          )
+          errors++
+        }
+      }
+
+      return { processed, errors }
+    } catch (error) {
+      console.error(
+        'Error in processCompletedBatches:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
+      return { processed: 0, errors: 1 }
+    }
   }
 
   async generateStory(
@@ -290,221 +516,202 @@ export class StoryGenerationService {
     const response = await this.client.messages.create({
       model: 'claude-sonnet-4-5',
       messages: [
-        { role: 'user', content: this.getPrompt(language, level, selectedTheme) },
+        {
+          role: 'user',
+          content: this.getPrompt(language, level, selectedTheme),
+        },
       ],
       max_tokens: 4096,
+      tools: [this.getStoryTool(language, level)],
+      tool_choice: { type: 'tool', name: 'create_story' },
     })
 
-    const responseText: string = (response.content?.[0] as any)?.text ?? '{}'
-    const cleanedResponse = StoryGenerationService.cleanJsonString(responseText)
+    // Extract the tool use from the response
+    const toolUse = response.content.find((block) => block.type === 'tool_use')
+    if (!toolUse || toolUse.type !== 'tool_use') {
+      throw new Error('No tool use found in response')
+    }
 
-    return JSON.parse(cleanedResponse) as StoryContent
+    return toolUse.input as StoryContent
   }
 
   async generateDailyStories(
     languages: string[],
     levels: string[],
     targetDate?: Date
-  ): Promise<void> {
-    if (this.isGenerating) {
-      throw new Error('Story generation is already in progress')
+  ): Promise<string> {
+    console.log('Generating daily stories using Message Batches API...')
+
+    const date = targetDate || new Date()
+    const year = date.getFullYear().toString()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+
+    // Select themes for this date
+    const themes = selectThemesForDate(date)
+    console.log(`Selected themes for ${year}-${month}-${day}:`)
+    console.log(`  Conversational (A1/A2): ${themes.conversational}`)
+    console.log(`  Narrative (B1/B2): ${themes.narrative}`)
+
+    // Create batch requests
+    const batchRequests = []
+    for (const language of languages) {
+      for (const level of levels) {
+        // Select appropriate theme based on level
+        const theme = EARLY_LEVELS.includes(level)
+          ? themes.conversational
+          : themes.narrative
+
+        batchRequests.push({
+          custom_id: `${year}${month}${day}-${language.toLowerCase()}-${level.toLowerCase()}`,
+          params: {
+            model: 'claude-sonnet-4-5',
+            messages: [
+              {
+                role: 'user' as const,
+                content: this.getPrompt(language, level, theme),
+              },
+            ],
+            max_tokens: 4096,
+            tools: [this.getStoryTool(language, level)],
+            tool_choice: { type: 'tool' as const, name: 'create_story' },
+          },
+        })
+      }
     }
 
-    this.isGenerating = true
+    console.log(`Creating batch with ${batchRequests.length} requests...`)
 
-    try {
-      console.log('Generating daily stories using Message Batches API...')
+    // Create the batch
+    const batch = await this.client.messages.batches.create({
+      requests: batchRequests,
+    })
 
-      const date = targetDate || new Date()
-      const year = date.getFullYear().toString()
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const day = date.getDate().toString().padStart(2, '0')
+    console.log(`Batch created with ID: ${batch.id}`)
+    console.log(
+      'Batch created successfully. Processing will happen asynchronously.'
+    )
 
-      // Select themes for this date
-      const themes = selectThemesForDate(date)
-      console.log(`Selected themes for ${year}-${month}-${day}:`)
-      console.log(`  Conversational (A1/A2): ${themes.conversational}`)
-      console.log(`  Narrative (B1/B2): ${themes.narrative}`)
-
-      // Create batch requests
-      const batchRequests = []
-      for (const language of languages) {
-        for (const level of levels) {
-          // Select appropriate theme based on level
-          const theme = EARLY_LEVELS.includes(level)
-            ? themes.conversational
-            : themes.narrative
-
-          batchRequests.push({
-            custom_id: `${language.toLowerCase()}-${level.toLowerCase()}`,
-            params: {
-              model: 'claude-sonnet-4-5',
-              messages: [
-                {
-                  role: 'user' as const,
-                  content: this.getPrompt(language, level, theme),
-                },
-              ],
-              max_tokens: 4096,
-            },
-          })
-        }
-      }
-
-      console.log(`Creating batch with ${batchRequests.length} requests...`)
-
-      // Create the batch
-      const batch = await this.client.messages.batches.create({
-        requests: batchRequests,
-      })
-
-      console.log(`Batch created with ID: ${batch.id}`)
-      console.log('Polling for completion...')
-
-      // Poll for completion
-      let completedBatch = await this.client.messages.batches.retrieve(batch.id)
-      while (completedBatch.processing_status === 'in_progress') {
-        await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait 5 seconds
-        completedBatch = await this.client.messages.batches.retrieve(batch.id)
-        console.log(`Batch status: ${completedBatch.processing_status}`)
-      }
-
-      if (completedBatch.processing_status === 'canceling') {
-        throw new Error('Batch was canceled')
-      }
-
-      console.log('Batch completed! Processing results...')
-
-      // Retrieve and process results
-      const results = await this.client.messages.batches.results(batch.id)
-
-      for await (const result of results) {
-        if (result.result.type === 'succeeded') {
-          const parts = result.custom_id.split('-')
-          const language = parts[0]
-          const level = parts[1]
-
-          if (!language || !level) {
-            console.error(`Invalid custom_id format: ${result.custom_id}`)
-            continue
-          }
-
-          try {
-            const responseText: string =
-              (result.result.message.content?.[0] as any)?.text ?? '{}'
-            const cleanedResponse =
-              StoryGenerationService.cleanJsonString(responseText)
-            const story = JSON.parse(cleanedResponse) as StoryContent
-
-            console.log(`Processed story for ${language} at ${level}`)
-
-            // Save story to file
-            const dirPath = path.join(
-              process.cwd(),
-              'stories',
-              year,
-              month,
-              day,
-              language,
-              level
-            )
-            await mkdir(dirPath, { recursive: true })
-
-            const filePath = path.join(dirPath, 'story.json')
-            await writeFile(filePath, JSON.stringify(story, null, 2), 'utf-8')
-            console.log(`Saved story to ${filePath}`)
-          } catch (error) {
-            console.error(
-              `Error processing story for ${language} at ${level}:`,
-              error
-            )
-          }
-        } else if (result.result.type === 'errored') {
-          console.error(
-            `Failed to generate story for ${result.custom_id}:`,
-            result.result.error
-          )
-        } else {
-          console.error(
-            `Failed to generate story for ${result.custom_id}: ${result.result.type}`
-          )
-        }
-      }
-
-      console.log('All stories generated and saved!')
-    } finally {
-      this.isGenerating = false
-    }
+    return batch.id
   }
 
-  private getResponseFormat(
-    language: string,
-    level: string,
-    questionLanguage: string
-  ): string {
+  private getStoryTool(language: string, level: string): Anthropic.Tool {
     const isEarlyLevel = EARLY_LEVELS.includes(level)
+    const questionLanguage = isEarlyLevel ? 'English' : language
 
     if (isEarlyLevel) {
-      return `
-    You must respond with valid JSON in exactly this format:
-    {
-      "title": "The conversation title in ${language}",
-      "messages": [
-        { "text": "Message text in ${language}", "sender": "Person 1" },
-        { "text": "Message text in ${language}", "sender": "Person 2" },
-        { "text": "Message text in ${language}", "sender": "Person 1" }
-      ],
-      "questions": [
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0
+      return {
+        name: 'create_story',
+        description: `Create a ${level} level conversational story in ${language}`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: `The conversation title in ${language}`,
+            },
+            messages: {
+              type: 'array',
+              description: `Array of at least 10 message objects in the conversation`,
+              items: {
+                type: 'object',
+                properties: {
+                  text: {
+                    type: 'string',
+                    description: `The message text in ${language}`,
+                  },
+                  sender: {
+                    type: 'string',
+                    description: 'The name of the person sending the message',
+                  },
+                },
+                required: ['text', 'sender'],
+              },
+              minItems: 10,
+            },
+            questions: {
+              type: 'array',
+              description: `Array of exactly 3 comprehension questions in ${questionLanguage}`,
+              items: {
+                type: 'object',
+                properties: {
+                  question: {
+                    type: 'string',
+                    description: `The question text in ${questionLanguage}`,
+                  },
+                  options: {
+                    type: 'array',
+                    description: 'Array of exactly 4 answer options',
+                    items: { type: 'string' },
+                    minItems: 4,
+                    maxItems: 4,
+                  },
+                  correctAnswer: {
+                    type: 'number',
+                    description:
+                      'The index (0-3) of the correct answer in the options array',
+                    minimum: 0,
+                    maximum: 3,
+                  },
+                },
+                required: ['question', 'options', 'correctAnswer'],
+              },
+              minItems: 3,
+              maxItems: 3,
+            },
+          },
+          required: ['title', 'messages', 'questions'],
         },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 1
-        },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 2
-        }
-      ]
-    }
-
-    The messages array should contain at least 10 message objects with "text" and "sender" properties.
-    The correctAnswer field should be the index (0-3) of the correct option.
-    IMPORTANT: Respond ONLY with the raw JSON object. Do NOT wrap it in markdown code blocks or backticks.
-    `
+      }
     } else {
-      return `
-    You must respond with valid JSON in exactly this format:
-    {
-      "title": "The story title in ${language}",
-      "story": "The complete story text in ${language}",
-      "questions": [
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0
+      return {
+        name: 'create_story',
+        description: `Create a ${level} level narrative story in ${language}`,
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: `The story title in ${language}`,
+            },
+            story: {
+              type: 'string',
+              description: `The complete story text in ${language}`,
+            },
+            questions: {
+              type: 'array',
+              description: `Array of exactly 3 comprehension questions in ${questionLanguage}`,
+              items: {
+                type: 'object',
+                properties: {
+                  question: {
+                    type: 'string',
+                    description: `The question text in ${questionLanguage}`,
+                  },
+                  options: {
+                    type: 'array',
+                    description: 'Array of exactly 4 answer options',
+                    items: { type: 'string' },
+                    minItems: 4,
+                    maxItems: 4,
+                  },
+                  correctAnswer: {
+                    type: 'number',
+                    description:
+                      'The index (0-3) of the correct answer in the options array',
+                    minimum: 0,
+                    maximum: 3,
+                  },
+                },
+                required: ['question', 'options', 'correctAnswer'],
+              },
+              minItems: 3,
+              maxItems: 3,
+            },
+          },
+          required: ['title', 'story', 'questions'],
         },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 1
-        },
-        {
-          "question": "Question text in ${questionLanguage}",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 2
-        }
-      ]
-    }
-
-    The correctAnswer field should be the index (0-3) of the correct option.
-    IMPORTANT: Respond ONLY with the raw JSON object. Do NOT wrap it in markdown code blocks or backticks.
-    `
+      }
     }
   }
 
@@ -514,114 +721,50 @@ export class StoryGenerationService {
 
     switch (level) {
       case 'A1':
-        promptString += `
-        Create a casual text message conversation in ${language} at a ${level} language level between two people about: ${theme}.
-        Write at least 10 alternating messages with natural back-and-forth exchanges.
-        Use only simple, common vocabulary and short sentences (5-10 words per message) appropriate for absolute beginners.
-        Include greetings, questions, and responses that feel natural and conversational.
-        `
+        promptString = `Create a casual text message conversation in ${language} at a ${level} language level between two people about: ${theme}.
+
+Write at least 10 alternating messages with natural back-and-forth exchanges.
+Use only simple, common vocabulary and short sentences (5-10 words per message) appropriate for absolute beginners.
+Include greetings, questions, and responses that feel natural and conversational.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
+
       case 'A2':
-        promptString += `
-        Create an informal email exchange in ${language} at a ${level} language level between two people (friends, classmates, or casual acquaintances) about: ${theme}.
-        Write at least 10 emails total, alternating between the two people. Don't include a greeting or closing in any of the emails; only write the body text.
-        Use simple vocabulary with some basic connectors and complete sentences suitable for elementary learners.
-        Maintain a friendly, informal tone throughout.
-        `
+        promptString = `Create an informal email exchange in ${language} at a ${level} language level between two people (friends, classmates, or casual acquaintances) about: ${theme}.
+
+Write at least 10 emails total, alternating between the two people. Don't include a greeting or closing in any of the emails; only write the body text.
+Use simple vocabulary with some basic connectors and complete sentences suitable for elementary learners.
+Maintain a friendly, informal tone throughout.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
+
       case 'B1':
-        promptString += `
-        Write an engaging fable or moral tale in ${language} at a ${level} language level with the theme: ${theme}.
-        The story should be 300-500 words and include animal or human characters with a clear narrative arc.
-        Use a mix of common and moderately advanced vocabulary with varied sentence structures including some compound and complex sentences.
-        The story should be accessible to intermediate learners while providing some challenge.
-        `
+        promptString = `Write an engaging fable or moral tale in ${language} at a ${level} language level with the theme: ${theme}.
+
+The story should be 300-500 words and include animal or human characters with a clear narrative arc.
+Use a mix of common and moderately advanced vocabulary with varied sentence structures including some compound and complex sentences.
+The story should be accessible to intermediate learners while providing some challenge.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
+
       case 'B2':
-        promptString += `
-        Write a compelling flash-fiction story in ${language} at a ${level} language level with the theme: ${theme}.
-        The story should be 400-600 words with a complete narrative featuring developed characters and an interesting plot twist or insight.
-        Use diverse vocabulary including idiomatic expressions, varied sentence structures with complex grammar, and descriptive language.
-        The story should be engaging and sophisticated enough to challenge upper-intermediate learners.
-        `
+        promptString = `Write a compelling flash-fiction story in ${language} at a ${level} language level with the theme: ${theme}.
+
+The story should be 400-600 words with a complete narrative featuring developed characters and an interesting plot twist or insight.
+Use diverse vocabulary including idiomatic expressions, varied sentence structures with complex grammar, and descriptive language.
+The story should be engaging and sophisticated enough to challenge upper-intermediate learners.
+
+Then create a title and three multiple-choice questions in ${questionLanguage} to quiz the reader's comprehension.`
         break
 
       default:
+        promptString = 'Invalid level'
         break
     }
 
-    promptString += `
-    Then create a title and three multiple-choice questions to quiz the reader's comprehension.
-    ${this.getResponseFormat(language, level, questionLanguage)}
-  `
-
     return promptString
-  }
-
-  private static cleanJsonString(string: string): string {
-    let cleaned = string.trim()
-
-    // Remove markdown code fences - look for ```json or ``` at start
-    // and ``` at end, capturing everything in between
-    const markdownMatch = cleaned.match(/^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/m)
-    if (markdownMatch && markdownMatch[1]) {
-      cleaned = markdownMatch[1]
-    }
-
-    // If there's still a leading ``` without the ending captured, remove it
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/gim, '')
-    cleaned = cleaned.replace(/\n?```\s*$/gim, '')
-
-    // Replace smart quotes with straight ones
-    // Include: " " (U+201C, U+201D), „ (U+201E - German low quote), ‟ (U+201F)
-    cleaned = cleaned.replace(/[""„‟]/g, '"')
-    cleaned = cleaned.replace(/[''‚‛]/g, "'")
-
-    // Fix unescaped quotes within JSON string values
-    // Process line by line to handle dialogue quotes in stories
-    const lines = cleaned.split('\n')
-    cleaned = lines
-      .map((line) => {
-        // Skip empty lines or structural JSON
-        if (/^\s*[{}\[\],]?\s*$/.test(line)) {
-          return line
-        }
-
-        // Check if this line contains a string property with value
-        // Pattern: "property": "value..."
-        const match = line.match(/^(\s*"[^"]+"\s*:\s*")(.*?)(",?\s*)$/)
-        if (!match || !match[1] || !match[2] || !match[3]) {
-          return line // Not a simple property: value line
-        }
-
-        const prefix = match[1] // e.g., '  "story": "'
-        const content = match[2] // the actual value content
-        const suffix = match[3] // '",\n' or '"\n'
-
-        // In the content, escape any unescaped quotes
-        let escaped = ''
-        for (let i = 0; i < content.length; i++) {
-          const char = content[i]
-          if (char === '\\' && i + 1 < content.length) {
-            // Already escaped, keep both characters
-            const nextChar = content[i + 1]
-            escaped += char + nextChar
-            i++ // skip next char
-          } else if (char === '"') {
-            // Unescaped quote - escape it
-            escaped += '\\"'
-          } else {
-            escaped += char
-          }
-        }
-
-        return prefix + escaped + suffix
-      })
-      .join('\n')
-
-    // Remove trailing commas before } or ]
-    cleaned = cleaned.replace(/,\s*([}\]])/g, '$1')
-
-    return cleaned.trim()
   }
 }

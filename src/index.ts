@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import path from 'path'
 import express, { Request, Response } from 'express'
-import { readFile, access } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import {
   StoryGenerationService,
   SUPPORTED_LANGUAGES,
@@ -32,46 +32,39 @@ app.get('/', (_req: Request, res: Response) => {
 // Manual story generation route
 app.get('/generate-stories', async (_req: Request, res: Response) => {
   try {
-    // Check if generation is already in progress
-    if (storyService.isGeneratingStories()) {
-      res.type('text/plain')
-      res.send(
-        `Story generation is already in progress. Please wait for it to complete.`
+    const messages: string[] = []
+
+    // Step 1: Process any completed batches first
+    const processResult = await storyService.processCompletedBatches()
+
+    if (processResult.processed > 0) {
+      messages.push(
+        `✓ Processed ${processResult.processed} completed batch(es)`
       )
+    }
+    if (processResult.errors > 0) {
+      messages.push(
+        `⚠ Encountered ${processResult.errors} error(s) while processing batches`
+      )
+    }
+
+    // Step 2: Check if there's already a batch in progress
+    const inProgressBatchId = await storyService.checkInProgressBatch()
+    if (inProgressBatchId) {
+      messages.push(
+        `⏳ Batch ${inProgressBatchId} is currently in progress. Please wait for it to complete before requesting new stories.`
+      )
+      messages.push(
+        'Call this endpoint again to check for completed batches and process results.'
+      )
+      res.type('text/plain')
+      res.send(messages.join('\n'))
       return
     }
 
     const now = new Date()
     const tomorrow = new Date(now)
     tomorrow.setDate(tomorrow.getDate() + 1)
-
-    // Helper function to check if stories exist for a given date
-    const checkStoriesExist = async (date: Date): Promise<boolean> => {
-      const year = date.getFullYear().toString()
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const day = date.getDate().toString().padStart(2, '0')
-
-      const firstLanguage = SUPPORTED_LANGUAGES[0]?.toLowerCase() || 'spanish'
-      const firstLevel = EARLY_LEVELS[0]?.toLowerCase() || 'a1'
-
-      const sampleFilePath = path.join(
-        process.cwd(),
-        'stories',
-        year,
-        month,
-        day,
-        firstLanguage,
-        firstLevel,
-        'story.json'
-      )
-
-      try {
-        await access(sampleFilePath)
-        return true
-      } catch {
-        return false
-      }
-    }
 
     // Helper function to format date as YYYY-MM-DD
     const formatDate = (date: Date): string => {
@@ -81,51 +74,78 @@ app.get('/generate-stories', async (_req: Request, res: Response) => {
       return `${year}-${month}-${day}`
     }
 
-    // Check which stories need to be generated
-    const todayExists = await checkStoriesExist(now)
-    const tomorrowExists = await checkStoriesExist(tomorrow)
+    // Step 3: Check which stories need to be generated
+    const todayExists = await storyService.checkStoriesExistForDate(now)
+    const tomorrowExists = await storyService.checkStoriesExistForDate(tomorrow)
 
     const datesToGenerate: Date[] = []
     if (!todayExists) datesToGenerate.push(now)
     if (!tomorrowExists) datesToGenerate.push(tomorrow)
 
     if (datesToGenerate.length === 0) {
-      res.type('text/plain')
-      res.send(
-        `Stories for today (${formatDate(now)}) and tomorrow (${formatDate(
+      messages.push(
+        `✓ Stories for today (${formatDate(now)}) and tomorrow (${formatDate(
           tomorrow
         )}) have already been generated.`
       )
-    } else {
-      const dateStrings = datesToGenerate.map(formatDate).join(' and ')
       res.type('text/plain')
-      res.send(
-        `Starting story generation for ${dateStrings}. This may take a few minutes...`
-      )
+      res.send(messages.join('\n'))
+    } else {
+      // Step 4: Create batches without waiting for completion
+      const batchIds: string[] = []
 
-      // Trigger generation in the background for each date
-      Promise.all(
-        datesToGenerate.map((date) =>
-          storyService.generateDailyStories(
+      for (const date of datesToGenerate) {
+        try {
+          const batchId = await storyService.generateDailyStories(
             SUPPORTED_LANGUAGES,
             [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS],
             date
           )
+
+          if (batchId) {
+            batchIds.push(batchId)
+            messages.push(
+              `✓ Batch ${batchId} is processing stories for ${formatDate(date)}`
+            )
+          }
+        } catch (error) {
+          console.error(
+            `Error creating batch for ${formatDate(date)}:`,
+            error instanceof Error ? error.message : 'Unknown error'
+          )
+          messages.push(
+            `✗ Failed to create batch for ${formatDate(date)}: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`
+          )
+        }
+      }
+
+      if (batchIds.length > 0) {
+        messages.push(
+          '\nStories will be available once batch processing completes.'
         )
-      )
-        .then(() => {
-          console.log(`Story generation completed for ${dateStrings}`)
-        })
-        .catch((error) => {
-          console.error('Error during story generation:', error)
-        })
+        messages.push(
+          'Call this endpoint again to check for completed batches and process results.'
+        )
+      }
+
+      res.type('text/plain')
+      res.send(messages.join('\n'))
     }
   } catch (error) {
-    console.error('Error in generate-stories route:', error)
+    console.error(
+      'Error in generate-stories route:',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
     res
       .status(500)
       .type('text/plain')
-      .send('Error checking or generating stories.')
+      .send(
+        `Error checking or generating stories: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      )
   }
 })
 
