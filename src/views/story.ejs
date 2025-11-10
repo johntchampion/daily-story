@@ -21,6 +21,22 @@
         <% } else if (story) { %>
             <p><%= story %></p>
         <% } %>
+
+        <% if (otherLevels && otherLevels.length > 0) { %>
+            <div class="other-levels">
+                <h3>Try Other Skill Levels</h3>
+                <ul class="level-links">
+                    <% otherLevels.forEach(level => { %>
+                        <li>
+                            <a href="<%= level.url %>">
+                                <span class="level-badge"><%= level.level %></span>
+                                <span class="level-title"><%= level.title %></span>
+                            </a>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        <% } %>
     </div>
 
     <% if (questions && questions.length > 0) { %>
