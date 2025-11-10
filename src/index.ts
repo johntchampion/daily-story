@@ -40,24 +40,21 @@ app.get('/generate-stories', async (_req: Request, res: Response) => {
     const messages: string[] = []
 
     // Step 1: Process any completed batches first
-    const processResult = await storyService.processCompletedBatches()
+    const processResult = await storyService.processBatches()
 
-    if (processResult.processed > 0) {
+    if (processResult.processedBatchIDs.length > 0) {
       messages.push(
-        `✓ Processed ${processResult.processed} completed batch(es)`
+        `✓ Processed ${processResult.processedBatchIDs.length} completed batch(es)`
       )
     }
-    if (processResult.errors > 0) {
+    if (processResult.errorBatchIDs.length > 0) {
       messages.push(
-        `⚠ Encountered ${processResult.errors} error(s) while processing batches`
+        `⚠ Encountered ${processResult.errorBatchIDs.length} error(s) while processing batches`
       )
     }
-
-    // Step 2: Check if there's already a batch in progress
-    const inProgressBatchId = await storyService.checkInProgressBatch()
-    if (inProgressBatchId) {
+    if (processResult.inProgressBatchIDs.length > 0) {
       messages.push(
-        `⏳ Batch ${inProgressBatchId} is currently in progress. Please wait for it to complete before requesting new stories.`
+        `⏳ Batch(es) currently in progress: ${processResult.inProgressBatchIDs.length}. Please wait for processing to complete before requesting new stories.`
       )
       messages.push(
         'Call this endpoint again to check for completed batches and process results.'

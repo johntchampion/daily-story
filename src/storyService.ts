@@ -267,22 +267,6 @@ export class StoryGenerationService {
   }
 
   /**
-   * List the most recent message batches from the API (limit: 2)
-   */
-  async listBatches(): Promise<Anthropic.Messages.MessageBatch[]> {
-    try {
-      const page = await this.client.messages.batches.list({ limit: 2 })
-      return page.data
-    } catch (error) {
-      console.error(
-        'Error listing batches:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
-      return []
-    }
-  }
-
-  /**
    * Check if stories for a specific date already exist on disk
    */
   async checkStoriesExistForDate(date: Date): Promise<boolean> {
@@ -313,46 +297,37 @@ export class StoryGenerationService {
   }
 
   /**
-   * Check if there's already an in-progress batch
-   * Returns the batch ID if found, null otherwise
-   */
-  async checkInProgressBatch(): Promise<string | null> {
-    try {
-      const batches = await this.listBatches()
-
-      // Find any batch that is in progress
-      const inProgressBatch = batches.find(
-        (batch) => batch.processing_status === 'in_progress'
-      )
-
-      return inProgressBatch ? inProgressBatch.id : null
-    } catch (error) {
-      console.error(
-        'Error checking for in-progress batches:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
-      return null
-    }
-  }
-
-  /**
    * Find and process any completed batches that haven't been processed yet
    */
-  async processCompletedBatches(): Promise<{
-    processed: number
-    errors: number
+  async processBatches(): Promise<{
+    processedBatchIDs: string[]
+    errorBatchIDs: string[]
+    inProgressBatchIDs: string[]
   }> {
     console.log('Checking for completed batches to process...')
 
     try {
-      const batches = await this.listBatches()
-      let processed = 0
-      let errors = 0
+      const page = await this.client.messages.batches.list({ limit: 2 })
+
+      if (!page.data) {
+        throw new Error('API returned invalid response: page.data is undefined')
+      }
+
+      const batches = page.data
+
+      let processedBatchIDs: string[] = []
+      let errorBatchIDs: string[] = []
+      let inProgressBatchIDs: string[] = []
 
       // Filter for batches that are completed (ended) but might not have been processed
       const completedBatches = batches.filter(
         (batch) => batch.processing_status === 'ended'
       )
+
+      // Find any batch that is in progress
+      inProgressBatchIDs = batches
+        .filter((batch) => batch.processing_status === 'in_progress')
+        .map((batch) => batch.id)
 
       console.log(`Found ${completedBatches.length} completed batches`)
 
@@ -378,7 +353,7 @@ export class StoryGenerationService {
             console.error(
               `Invalid custom_id format in batch ${batch.id}: ${sampleCustomId}`
             )
-            errors++
+            errorBatchIDs.push(batch.id)
             continue
           }
 
@@ -479,23 +454,23 @@ export class StoryGenerationService {
             }
           }
 
-          processed++
+          processedBatchIDs.push(batch.id)
         } catch (error) {
           console.error(
             `Error checking/processing batch ${batch.id}:`,
             error instanceof Error ? error.message : 'Unknown error'
           )
-          errors++
+          errorBatchIDs.push(batch.id)
         }
       }
 
-      return { processed, errors }
+      return { processedBatchIDs, errorBatchIDs, inProgressBatchIDs }
     } catch (error) {
       console.error(
-        'Error in processCompletedBatches:',
+        'Error in processBatches:',
         error instanceof Error ? error.message : 'Unknown error'
       )
-      return { processed: 0, errors: 1 }
+      throw error
     }
   }
 
