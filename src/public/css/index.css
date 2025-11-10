@@ -1,19 +1,125 @@
-@import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:wght@500;600;700&family=Inter:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
+
+html {
+    background-color: #FFFBF5;
+    color-scheme: light dark;
+}
 
 body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
     line-height: 1.6;
-    background-color: #f5f5f5;
-    color: #333;
+    background-color: #FFFBF5;
+    color: #292524;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #FFFFFF;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(217, 119, 6, 0.05),
+        0 10px 30px rgba(217, 119, 6, 0.08),
+        0 20px 60px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(217, 119, 6, 0.1);
+    width: 100%;
+    max-width: 800px;
+    margin: 2rem auto;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Common heading styles */
+h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900;
+    color: #292524;
+    text-align: center;
+    margin-bottom: 30px;
+    letter-spacing: -0.02em;
+}
+
+h2 {
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 700;
+    color: #D97706;
+    margin-top: 0;
+    letter-spacing: -0.01em;
+}
+
+h3 {
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 600;
+    color: #44403C;
+    margin-top: 0;
+}
+
+/* Common button styles */
+.btn {
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-block;
+    box-sizing: border-box;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+}
+
+.btn-secondary {
+    background-color: #FEF7ED;
+    color: #D97706;
+    border-color: #F59E0B;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-1px);
+    background-color: #FEF3C7;
+    color: #B45309;
+    border-color: #D97706;
+}
+
+/* Common link styles */
+a {
+    color: #D97706;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+}
+
+a:hover {
+    color: #B45309;
+    border-bottom-color: #F59E0B;
 }
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
     body {
         padding: 15px;
+    }
+
+    .container {
+        padding: 25px;
+        margin: 1.5rem auto;
     }
 }
 
@@ -22,11 +128,61 @@ body {
     body {
         padding: 10px;
     }
+
+    .container {
+        padding: 20px;
+    }
 }
 
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
+    html {
+        background-color: #1C1917;
+    }
+
     body {
-        background-color: #1a1a1a;
-        color: #e0e0e0;
+        background-color: #1C1917;
+        color: #E7E5E4;
+    }
+
+    .container {
+        background-color: #292524;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3),
+            0 10px 30px rgba(217, 119, 6, 0.15),
+            0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(217, 119, 6, 0.2);
+    }
+
+    h1 {
+        color: #FAFAF9;
+    }
+
+    h2 {
+        color: #FCD34D;
+    }
+
+    h3 {
+        color: #E7E5E4;
+    }
+
+    .btn-secondary {
+        background-color: #44403C;
+        color: #FCD34D;
+        border-color: #D97706;
+    }
+
+    .btn-secondary:hover {
+        background-color: #57534E;
+        color: #FDE68A;
+        border-color: #F59E0B;
+    }
+
+    a {
+        color: #FCD34D;
+    }
+
+    a:hover {
+        color: #FDE68A;
+        border-bottom-color: #FCD34D;
     }
 }

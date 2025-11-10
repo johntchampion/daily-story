@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Story - <%= language %> - <%= level %></title>
+    <title><%= language %> (<%= level %>) - Daily Story</title>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/story.css">
 </head>
 <body>
-    <div class="story">
+    <div class="container story">
         <h1 class="story-title"><%= title %></h1>
         <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
         <% if (messages && messages.length > 0) { %>
@@ -20,6 +20,22 @@
             <% }) %>
         <% } else if (story) { %>
             <p><%= story %></p>
+        <% } %>
+
+        <% if (otherLevels && otherLevels.length > 0) { %>
+            <div class="other-levels">
+                <h3>Try Other Skill Levels</h3>
+                <ul class="level-links">
+                    <% otherLevels.forEach(level => { %>
+                        <li>
+                            <a href="<%= level.url %>">
+                                <span class="level-badge"><%= level.level %></span>
+                                <span class="level-title"><%= level.title %></span>
+                            </a>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
         <% } %>
     </div>
 
@@ -55,7 +71,11 @@
     <% } %>
 
     <p class="bookmark-message">Bookmark this page and come back tomorrow for a new story!</p>
-    <div class="home-link-container"><a href="/" class="home-link">Select Language & Skill Level</a></div>
+    <div class="home-link-container">
+        <a href="/" class="home-link">Select Language & Skill Level</a>
+        <span class="link-separator">•</span>
+        <a href="/about" class="home-link">About</a>
+    </div>
 
     <script>
         function selectAnswer(element) {

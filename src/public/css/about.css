@@ -1,0 +1,206 @@
+/* Page-specific heading adjustments */
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    margin-bottom: 18px;
+    font-size: 1.6rem;
+    margin-top: 2rem;
+}
+
+h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.25rem;
+}
+
+.about-section {
+    margin-bottom: 40px;
+}
+
+.about-section p {
+    color: #57534E;
+    line-height: 1.8;
+    margin: 12px 0;
+    font-size: 1.05rem;
+}
+
+.cefr-intro {
+    margin-bottom: 24px;
+    font-style: italic;
+    color: #78716C;
+    font-size: 1.05rem;
+}
+
+/* Level cards */
+.level-card {
+    background-color: #FFFBF5;
+    border-left: 5px solid #F59E0B;
+    border: 2px solid #F3E8D7;
+    border-left: 5px solid #F59E0B;
+    padding: 24px;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.06);
+    transition: all 0.3s ease;
+}
+
+.level-card:hover {
+    border-left-color: #D97706;
+    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.12);
+}
+
+.level-card p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #44403C;
+}
+
+.level-card strong {
+    color: #1C1917;
+    font-weight: 600;
+}
+
+/* Lists */
+.how-to-list {
+    list-style-position: outside;
+    padding-left: 24px;
+    margin: 18px 0;
+}
+
+.how-to-list li {
+    margin: 14px 0;
+    color: #57534E;
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+
+.how-to-list li::marker {
+    color: #F59E0B;
+    font-weight: 700;
+}
+
+.tips-list {
+    list-style-type: disc;
+    padding-left: 24px;
+    margin: 18px 0;
+}
+
+.tips-list li {
+    margin: 14px 0;
+    color: #57534E;
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+
+.tips-list li::marker {
+    color: #F59E0B;
+}
+
+/* Call-to-action buttons */
+.cta-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 40px;
+    justify-content: center;
+}
+
+.cta-buttons .btn {
+    min-width: 150px;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 25px;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    .about-section {
+        margin-bottom: 30px;
+    }
+
+    .level-card {
+        padding: 15px;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+
+    .about-section p,
+    .how-to-list li,
+    .tips-list li {
+        font-size: 14px;
+    }
+
+    .level-card {
+        padding: 12px;
+    }
+
+    .level-card p {
+        font-size: 14px;
+    }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+
+    .about-section p,
+    .how-to-list li,
+    .tips-list li {
+        color: #D6D3D1;
+    }
+
+    .cefr-intro {
+        color: #A8A29E;
+    }
+
+    .level-card {
+        background-color: #44403C;
+        border: 2px solid #57534E;
+        border-left: 5px solid #FCD34D;
+    }
+
+    .level-card:hover {
+        border-left-color: #FBBF24;
+    }
+
+    .level-card p {
+        color: #D6D3D1;
+    }
+
+    .level-card strong {
+        color: #FAFAF9;
+    }
+
+    .how-to-list li::marker,
+    .tips-list li::marker {
+        color: #FCD34D;
+    }
+}

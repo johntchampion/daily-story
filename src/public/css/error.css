@@ -1,47 +1,49 @@
 body {
     text-align: center;
 }
+
 .error-container {
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 8px;
-    padding: 40px;
+    background-color: #FEF2F2;
+    border: 2px solid #FECACA;
+    border-radius: 16px;
+    padding: 50px;
     margin-top: 50px;
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.1);
 }
+
 .error-code {
-    font-size: 72px;
-    font-weight: bold;
-    color: #721c24;
+    font-size: 80px;
+    font-weight: 900;
+    font-family: 'Playfair Display', Georgia, serif;
+    color: #DC2626;
     margin: 0;
+    letter-spacing: -0.02em;
 }
+
 .error-message {
-    font-size: 24px;
-    color: #721c24;
+    font-size: 26px;
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 600;
+    color: #991B1B;
     margin: 20px 0;
 }
+
 .error-details {
     font-size: 16px;
-    color: #856404;
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-    border-radius: 4px;
-    padding: 15px;
-    margin-top: 20px;
+    font-family: 'Inter', sans-serif;
+    color: #92400E;
+    background-color: #FEF3C7;
+    border: 2px solid #FDE68A;
+    border-radius: 10px;
+    padding: 18px;
+    margin-top: 24px;
     text-align: left;
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
-.back-link {
-    display: inline-block;
-    margin-top: 30px;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-}
-.back-link:hover {
-    background-color: #0056b3;
+
+.btn {
+    margin-top: 2rem;
 }
 
 /* Mobile responsive styles */
@@ -50,21 +52,23 @@ body {
         padding: 25px;
         margin-top: 30px;
     }
+
     .error-code {
         font-size: 56px;
     }
+
     .error-message {
         font-size: 20px;
         margin: 15px 0;
     }
+
     .error-details {
         font-size: 14px;
         padding: 12px;
     }
-    .back-link {
-        margin-top: 20px;
-        padding: 8px 16px;
-        font-size: 15px;
+
+    .btn {
+        margin-top: 1.2rem;
     }
 }
 
@@ -74,12 +78,15 @@ body {
         padding: 20px;
         margin-top: 20px;
     }
+
     .error-code {
         font-size: 48px;
     }
+
     .error-message {
         font-size: 18px;
     }
+
     .error-details {
         font-size: 13px;
     }
@@ -87,24 +94,21 @@ body {
 
 @media (prefers-color-scheme: dark) {
     .error-container {
-        background-color: #5a1a1a;
-        border-color: #8a2a2a;
+        background-color: #450A0A;
+        border-color: #991B1B;
     }
+
     .error-code {
-        color: #ff9999;
+        color: #FCA5A5;
     }
+
     .error-message {
-        color: #ffcccc;
+        color: #FEE2E2;
     }
+
     .error-details {
-        background-color: #4a3a1a;
-        border-color: #6a5a2a;
-        color: #ffdd99;
-    }
-    .back-link {
-        background-color: #4a90e2;
-    }
-    .back-link:hover {
-        background-color: #357abd;
+        background-color: #451A03;
+        border-color: #78350F;
+        color: #FDE68A;
     }
 }

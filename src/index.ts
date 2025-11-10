@@ -29,6 +29,11 @@ app.get('/', (_req: Request, res: Response) => {
   })
 })
 
+// About page route
+app.get('/about', (_req: Request, res: Response) => {
+  res.render('about')
+})
+
 // Manual story generation route
 app.get('/generate-stories', async (_req: Request, res: Response) => {
   try {
@@ -227,6 +232,42 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
       return
     }
 
+    // Load stories for all other levels within the same language
+    const otherLevels: Array<{
+      level: string
+      title: string
+      url: string
+    }> = []
+
+    for (const otherLevel of allLevels) {
+      // Skip the current level
+      if (otherLevel === normalizedLevel) continue
+
+      const otherFilePath = path.join(
+        process.cwd(),
+        'stories',
+        year,
+        month,
+        day,
+        normalizedLanguage,
+        otherLevel.toLowerCase(),
+        'story.json'
+      )
+
+      try {
+        const otherFileContent = await readFile(otherFilePath, 'utf-8')
+        const otherStory: StoryContent = JSON.parse(otherFileContent)
+        otherLevels.push({
+          level: otherLevel,
+          title: otherStory.title,
+          url: `/${normalizedLanguage}/${otherLevel.toLowerCase()}`,
+        })
+      } catch {
+        // Story doesn't exist for this level, skip it
+        continue
+      }
+    }
+
     res.render('story', {
       title: content.title,
       story: content.story,
@@ -243,6 +284,7 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
         day: 'numeric',
       }),
       dateISO: now.toISOString().split('T')[0],
+      otherLevels,
     })
   } catch (error) {
     next(error)
