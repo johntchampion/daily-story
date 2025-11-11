@@ -344,16 +344,6 @@
         color: #FCD34D;
     }
 
-    .message {
-        background-color: #44403C;
-        border-left-color: #FBBF24;
-    }
-
-    .message:hover {
-        background-color: #57534E;
-        border-left-color: #FCD34D;
-    }
-
     .message .sender {
         color: #FCD34D;
     }
