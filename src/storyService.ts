@@ -26,7 +26,7 @@ export const EARLY_LEVELS = ['A1', 'A2']
 export const INTERMEDIATE_LEVELS = ['B1', 'B2']
 
 // Theme lists for variety in story generation
-export const CONVERSATIONAL_THEMES = [
+export const EARLY_LEVEL_THEMES = [
   'planning a birthday party',
   'ordering food at a restaurant',
   'asking for directions in a new city',
@@ -128,7 +128,7 @@ export const CONVERSATIONAL_THEMES = [
   'planning a charity event',
 ]
 
-export const INTERMEDIATE_CONVERSATIONAL_THEMES = [
+export const INTERMEDIATE_LEVEL_THEMES = [
   'debating remote work versus office work',
   'discussing career change considerations',
   'explaining work-life balance strategies',
@@ -268,23 +268,23 @@ const seededRandom = (seed: number): number => {
 // Select themes for a given date (deterministic based on date)
 export const selectThemesForDate = (
   date: Date
-): { conversational: string; intermediateConversational: string } => {
+): { early: string; intermediate: string } => {
   // Create a seed from the date (YYYYMMDD format)
   const seed =
     date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
   // Use seed to select indices
-  const conversationalIndex = Math.floor(
-    seededRandom(seed) * CONVERSATIONAL_THEMES.length
+  const earlyConversationIndex = Math.floor(
+    seededRandom(seed) * EARLY_LEVEL_THEMES.length
   )
-  const intermediateConversationalIndex = Math.floor(
-    seededRandom(seed + 1) * INTERMEDIATE_CONVERSATIONAL_THEMES.length
+  const intermediateConversationIndex = Math.floor(
+    seededRandom(seed + 1) * INTERMEDIATE_LEVEL_THEMES.length
   )
 
   return {
-    conversational: CONVERSATIONAL_THEMES[conversationalIndex] || '',
-    intermediateConversational:
-      INTERMEDIATE_CONVERSATIONAL_THEMES[intermediateConversationalIndex] || '',
+    early: EARLY_LEVEL_THEMES[earlyConversationIndex] || '',
+    intermediate:
+      INTERMEDIATE_LEVEL_THEMES[intermediateConversationIndex] || '',
   }
 }
 
@@ -514,8 +514,8 @@ export class StoryGenerationService {
     const selectedTheme =
       theme ||
       (EARLY_LEVELS.includes(level)
-        ? selectThemesForDate(new Date()).conversational
-        : selectThemesForDate(new Date()).intermediateConversational)
+        ? selectThemesForDate(new Date()).early
+        : selectThemesForDate(new Date()).intermediate)
 
     const response = await this.client.messages.create({
       model: 'claude-sonnet-4-5',
@@ -554,10 +554,8 @@ export class StoryGenerationService {
     // Select themes for this date
     const themes = selectThemesForDate(date)
     console.log(`Selected themes for ${year}-${month}-${day}:`)
-    console.log(`  Conversational (A1/A2): ${themes.conversational}`)
-    console.log(
-      `  Intermediate Conversational (B1/B2): ${themes.intermediateConversational}`
-    )
+    console.log(`  Early (A1/A2): ${themes.early}`)
+    console.log(`  Intermediate (B1/B2): ${themes.intermediate}`)
 
     // Create batch requests
     const batchRequests = []
@@ -565,8 +563,8 @@ export class StoryGenerationService {
       for (const level of levels) {
         // Select appropriate theme based on level
         const theme = EARLY_LEVELS.includes(level)
-          ? themes.conversational
-          : themes.intermediateConversational
+          ? themes.early
+          : themes.intermediate
 
         batchRequests.push({
           custom_id: `${year}${month}${day}-${language.toLowerCase()}-${level.toLowerCase()}`,
