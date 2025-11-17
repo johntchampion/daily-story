@@ -4,7 +4,8 @@ import path from 'path'
 
 export type StoryContent = {
   title: string
-  messages: { text: string; sender: string }[]
+  story?: string
+  messages?: { text: string; sender: string }[]
   questions: {
     question: string
     options: string[]

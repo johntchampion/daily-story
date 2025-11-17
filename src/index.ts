@@ -267,6 +267,7 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
 
     res.render('story', {
       title: content.title,
+      story: content.story,
       messages: content.messages,
       questions: content.questions,
       language:
