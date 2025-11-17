@@ -131,8 +131,8 @@ Core story generation service using class-based architecture:
 - `SUPPORTED_LANGUAGES` - Array of 8 language names
 - `EARLY_LEVELS = ['A1', 'A2']`
 - `INTERMEDIATE_LEVELS = ['B1', 'B2']`
-- `CONVERSATIONAL_THEMES` - 130 conversation topics for A1/A2 levels
-- `INTERMEDIATE_CONVERSATIONAL_THEMES` - 128 conversation topics for B1/B2 levels
+- `EARLY_LEVEL_THEMES` - 130 conversation topics for A1/A2 levels
+- `INTERMEDIATE_LEVEL_THEMES` - 128 conversation topics for B1/B2 levels
 
 **Theme System:**
 
@@ -259,7 +259,7 @@ npm start        # Run compiled production build
 
 ### Adding New Themes
 
-1. Add themes to `CONVERSATIONAL_THEMES` (A1/A2) or `INTERMEDIATE_CONVERSATIONAL_THEMES` (B1/B2) in `src/storyService.ts`
+1. Add themes to `EARLY_LEVEL_THEMES` (A1/A2) or `INTERMEDIATE_LEVEL_THEMES` (B1/B2) in `src/storyService.ts`
 2. Themes are automatically selected using deterministic random selection
 3. No other changes needed
 
