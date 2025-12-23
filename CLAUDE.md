@@ -23,6 +23,7 @@
 src/
 ├── index.ts           # Main Express app (routes, middleware)
 ├── storyService.ts    # Story generation service (class-based)
+├── themes.ts          # Theme arrays for each proficiency level
 ├── views/             # EJS templates
 │   ├── home.ejs       # Language/level selection page
 │   ├── story.ejs      # Story display with quiz
@@ -131,15 +132,19 @@ Core story generation service using class-based architecture:
 - `SUPPORTED_LANGUAGES` - Array of 8 language names
 - `EARLY_LEVELS = ['A1', 'A2']`
 - `INTERMEDIATE_LEVELS = ['B1', 'B2']`
-- `EARLY_LEVEL_THEMES` - 130 conversation topics for A1/A2 levels
-- `INTERMEDIATE_LEVEL_THEMES` - 128 conversation topics for B1/B2 levels
+- Theme arrays imported from `src/themes.ts` (each level has unique themes)
 
 **Theme System:**
 
 - `selectThemesForDate(date: Date)` - Deterministically selects themes based on date
-- Uses seeded random number generator for consistency (same date = same theme)
-- Returns both conversational and intermediate conversational themes
-- All levels now use conversational format with different complexity and themes
+- Uses seeded random number generator for consistency (same date = same theme per level)
+- Returns 4 themes (one for each level: A1, A2, B1, B2)
+- Each level has unique themes tailored to its proficiency:
+  - **A1 (135 themes):** Survival language, basic transactions, simple everyday situations
+  - **A2 (130 themes):** Familiar topics with preferences, planning, basic opinions
+  - **B1 (130 themes):** Expressing opinions, discussing experiences, abstract familiar topics
+  - **B2 (126 themes):** Nuanced debates, complex analysis, philosophical discussions
+- All levels use conversational format with progressively increasing complexity
 
 **AI Generation Flow:**
 
@@ -153,6 +158,39 @@ Core story generation service using class-based architecture:
 
 **Key Architecture Change:**
 Now uses Anthropic's tool/function calling feature instead of parsing JSON from text responses. This eliminates the need for JSON cleaning and provides structured, validated output.
+
+### src/themes.ts (530 lines)
+
+Contains theme arrays for each proficiency level, organized from simple to complex:
+
+**Theme Arrays:**
+
+- `A1_THEMES` (135 themes) - Absolute beginner survival topics
+  - Simple greetings, ordering food, asking directions
+  - Basic transactions and everyday situations
+  - Concrete, practical language use
+  - Example: 'ordering coffee or tea', 'asking where the bathroom is'
+
+- `A2_THEMES` (130 themes) - Elementary familiar topics
+  - Planning activities, expressing preferences
+  - Simple past experiences and basic opinions
+  - More social interactions and arrangements
+  - Example: 'planning a weekend trip with friends', 'discussing your favorite restaurant'
+
+- `B1_THEMES` (130 themes) - Intermediate opinions and experiences
+  - Expressing and justifying viewpoints
+  - Comparing options, discussing pros and cons
+  - Abstract familiar topics about life, work, culture
+  - Example: 'discussing the advantages and disadvantages of working from home'
+
+- `B2_THEMES` (126 themes) - Upper-intermediate nuanced debates
+  - Complex ethical and philosophical discussions
+  - Societal issues, global topics, critical analysis
+  - Hypothetical scenarios and persuasive arguments
+  - Example: 'debating whether artificial intelligence poses more opportunities or threats to society'
+
+**Design Philosophy:**
+Each level has progressively more complex themes that match learner capabilities. Themes within each array are diverse to maintain engagement throughout the year.
 
 ### views/story.ejs
 
@@ -191,9 +229,10 @@ Uses Anthropic's tool/function calling feature for structured output:
 Themes are selected deterministically based on date:
 
 - Seeded random number generator using date (YYYYMMDD format)
-- Same date always produces same themes across all instances
-- Ensures consistency for all users on a given day
-- 130 conversational themes (A1/A2) and 128 intermediate conversational themes (B1/B2)
+- Same date always produces same theme per level across all instances
+- Ensures consistency for all users on a given day and level
+- Each level (A1, A2, B1, B2) gets a unique theme appropriate for its proficiency
+- Different seed offsets ensure each level gets a different theme on the same date
 
 ### Error Handling
 
@@ -243,8 +282,12 @@ npm start        # Run compiled production build
 ### Content Strategy
 
 - Stories reset daily (based on date)
-- Same story shown to all users on a given day
-- Themes selected deterministically per date (130 conversational for A1/A2, 128 intermediate conversational for B1/B2)
+- Same story shown to all users on a given day and level
+- Themes selected deterministically per date, with each level getting a unique theme:
+  - A1: 135 beginner survival topics
+  - A2: 130 elementary familiar topics
+  - B1: 130 intermediate opinion topics
+  - B2: 126 advanced debate topics
 - All 8 languages at same level use the same theme on a given day
 - No user accounts or progress tracking
 - Quiz results are client-side only (not persisted)
@@ -259,9 +302,14 @@ npm start        # Run compiled production build
 
 ### Adding New Themes
 
-1. Add themes to `EARLY_LEVEL_THEMES` (A1/A2) or `INTERMEDIATE_LEVEL_THEMES` (B1/B2) in `src/storyService.ts`
+1. Edit the appropriate theme array in `src/themes.ts`:
+   - `A1_THEMES` for absolute beginner topics
+   - `A2_THEMES` for elementary topics
+   - `B1_THEMES` for intermediate topics
+   - `B2_THEMES` for upper-intermediate topics
 2. Themes are automatically selected using deterministic random selection
-3. No other changes needed
+3. Ensure themes match the complexity appropriate for each level
+4. No other changes needed (themes are imported automatically)
 
 ### Adjusting Story Generation
 
@@ -315,7 +363,7 @@ npm start        # Run compiled production build
 3. **In-Progress Detection:** System prevents creating new batches while one is in progress
 4. **Case Sensitivity:** Language and level parameters in URLs are case-insensitive (converted to lowercase)
 5. **Date-Based Keys:** Stories are keyed by date, so timezone differences could cause confusion
-6. **Theme Consistency:** All languages use the same theme on a given date (by design)
+6. **Theme Consistency:** All languages at the same level use the same theme on a given date, but each level (A1, A2, B1, B2) gets a different theme (by design)
 7. **Batch ID Format:** Custom IDs use format `YYYYMMDD-language-level` to identify date and content
 
 ## Security Notes

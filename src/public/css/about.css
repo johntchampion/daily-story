@@ -32,31 +32,30 @@ h3 {
     font-size: 1.05rem;
 }
 
-/* Level cards */
-.level-card {
-    background-color: #FFFBF5;
-    border-left: 5px solid #F59E0B;
-    border: 2px solid #F3E8D7;
-    border-left: 5px solid #F59E0B;
-    padding: 24px;
-    margin-bottom: 18px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.06);
-    transition: all 0.3s ease;
+/* Level descriptions */
+.level-description {
+    margin-bottom: 28px;
 }
 
-.level-card:hover {
-    border-left-color: #D97706;
-    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.12);
+.level-description h3 {
+    margin-bottom: 6px;
+    color: #1C1917;
 }
 
-.level-card p {
-    margin: 10px 0;
-    font-size: 1rem;
-    color: #44403C;
+.level-subtitle {
+    color: #78716C;
+    font-style: italic;
+    margin: 6px 0 10px 0 !important;
+    font-size: 1rem !important;
 }
 
-.level-card strong {
+.level-description p {
+    margin: 8px 0;
+    font-size: 0.95rem;
+    color: #57534E;
+}
+
+.level-description strong {
     color: #1C1917;
     font-weight: 600;
 }
@@ -128,8 +127,8 @@ h3 {
         margin-bottom: 30px;
     }
 
-    .level-card {
-        padding: 15px;
+    .level-description {
+        margin-bottom: 24px;
     }
 
     .cta-buttons {
@@ -159,12 +158,9 @@ h3 {
         font-size: 14px;
     }
 
-    .level-card {
-        padding: 12px;
-    }
-
-    .level-card p {
-        font-size: 14px;
+    .level-description p,
+    .level-subtitle {
+        font-size: 14px !important;
     }
 }
 
@@ -181,21 +177,19 @@ h3 {
         color: #A8A29E;
     }
 
-    .level-card {
-        background-color: #44403C;
-        border: 2px solid #57534E;
-        border-left: 5px solid #FCD34D;
+    .level-description h3 {
+        color: #FAFAF9;
     }
 
-    .level-card:hover {
-        border-left-color: #FBBF24;
+    .level-subtitle {
+        color: #A8A29E;
     }
 
-    .level-card p {
+    .level-description p {
         color: #D6D3D1;
     }
 
-    .level-card strong {
+    .level-description strong {
         color: #FAFAF9;
     }
 

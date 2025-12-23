@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { mkdir, writeFile, access } from 'fs/promises'
 import path from 'path'
+import { A1_THEMES, A2_THEMES, B1_THEMES, B2_THEMES } from './themes.js'
 
 export type StoryContent = {
   title: string
@@ -26,240 +27,6 @@ export const SUPPORTED_LANGUAGES = [
 export const EARLY_LEVELS = ['A1', 'A2']
 export const INTERMEDIATE_LEVELS = ['B1', 'B2']
 
-// Theme lists for variety in story generation
-export const EARLY_LEVEL_THEMES = [
-  'planning a birthday party',
-  'ordering food at a restaurant',
-  'asking for directions in a new city',
-  'discussing weekend plans',
-  'shopping for clothes',
-  'making a doctor appointment',
-  'talking about the weather',
-  'inviting someone to a movie',
-  'discussing hobbies and interests',
-  'arranging to meet a friend',
-  'booking a hotel room',
-  'asking about public transportation',
-  'sharing vacation photos',
-  'discussing favorite foods',
-  'planning a picnic',
-  'talking about pets',
-  'asking for recipe recommendations',
-  'discussing a recent concert or event',
-  'making gym or exercise plans',
-  'talking about family members',
-  'discussing daily routines',
-  'asking for book recommendations',
-  'planning a study session',
-  'talking about sports or games',
-  'discussing morning coffee habits',
-  'arranging a group dinner',
-  'talking about a new job',
-  'discussing apartment hunting',
-  'planning a beach day',
-  'talking about learning a new skill',
-  'discussing favorite TV shows',
-  'arranging a carpool',
-  'talking about grocery shopping',
-  'planning a hiking trip',
-  'discussing phone or tech problems',
-  'talking about the gym or fitness',
-  'arranging a video call',
-  'discussing a wedding or celebration',
-  'planning a surprise party',
-  'talking about buying furniture',
-  'discussing home repairs',
-  'arranging pet care while traveling',
-  'talking about cooking dinner',
-  'planning a road trip',
-  'discussing concert tickets',
-  'talking about starting a garden',
-  'arranging a moving day',
-  'discussing seasonal activities',
-  'planning a museum visit',
-  'talking about neighborhood news',
-  'discussing car troubles',
-  'arranging childcare',
-  'talking about a new restaurant',
-  'planning holiday decorations',
-  'discussing gift ideas',
-  'talking about recycling or sustainability',
-  'arranging a study abroad program',
-  'discussing favorite music',
-  'planning a volunteer activity',
-  'talking about a farmers market',
-  'discussing online shopping',
-  'arranging a photography session',
-  'talking about board game night',
-  'planning a potluck dinner',
-  'discussing bike routes',
-  'talking about a yoga or dance class',
-  'arranging a book club meeting',
-  'discussing a new coffee shop',
-  'planning a karaoke night',
-  'talking about home organization',
-  'discussing local festivals',
-  'arranging a dog park meetup',
-  'talking about starting a business',
-  'planning a craft project',
-  'discussing apartment decorating',
-  'talking about meal prep',
-  'arranging a language exchange',
-  'discussing climate and seasons',
-  'planning a camping adventure',
-  'talking about visiting relatives',
-  'discussing New Year resolutions',
-  'arranging a painting class',
-  'talking about smart home devices',
-  'planning a wine tasting',
-  'discussing thrift store finds',
-  'talking about running a marathon',
-  'arranging a garage sale',
-  'discussing a documentary',
-  'planning a costume party',
-  'talking about adopting a pet',
-  'discussing budgeting and saving',
-  'arranging a trivia night',
-  'talking about trying new cuisines',
-  'planning a spa day',
-  'discussing home security',
-  'talking about getting a haircut',
-  'arranging a gaming tournament',
-  'discussing subscription services',
-  'planning a charity event',
-]
-
-export const INTERMEDIATE_LEVEL_THEMES = [
-  'debating remote work versus office work',
-  'discussing career change considerations',
-  'explaining work-life balance strategies',
-  'negotiating a raise or promotion',
-  'handling conflict with a coworker',
-  'comparing freelancing to traditional employment',
-  'planning professional development goals',
-  'discussing effective team collaboration',
-  'giving constructive feedback to a colleague',
-  'exploring networking strategies',
-  'debating social media impact on relationships',
-  'discussing online privacy concerns',
-  'sharing digital detox experiences',
-  'exploring AI and automation in daily life',
-  'comparing online versus in-store shopping',
-  'discussing streaming services and content',
-  'debating digital learning versus traditional education',
-  'explaining cryptocurrency and digital payments',
-  'discussing smart home technology pros and cons',
-  'exploring screen time and health effects',
-  'discussing different music genres and their history',
-  'debating the benefits of routine versus spontaneity',
-  'sharing favorite childhood memories',
-  'comparing handwriting versus typing',
-  'discussing city parks and recreational spaces',
-  'exploring different photography styles',
-  'discussing home gardening techniques',
-  'debating morning versus evening routines',
-  'comparing different types of exercise',
-  'discussing memory improvement techniques',
-  'exploring mental health awareness',
-  'debating alternative medicine versus traditional',
-  'discussing nutrition myths and facts',
-  'comparing fitness trends and effectiveness',
-  'explaining sleep hygiene and productivity',
-  'sharing stress management techniques',
-  'discussing preventive healthcare approaches',
-  'exploring work-related health issues',
-  'debating mindfulness and meditation benefits',
-  'comparing healthcare experiences',
-  'discussing generational differences in technology use',
-  'exploring family traditions and customs',
-  'debating urban versus rural living',
-  'discussing the value of different hobbies',
-  'exploring effective communication skills',
-  'discussing time management for busy schedules',
-  'debating the importance of work-life boundaries',
-  'exploring strategies for maintaining motivation',
-  'discussing volunteer work and community service',
-  'sharing community involvement experiences',
-  'comparing book versus movie adaptations',
-  'discussing media consumption habits',
-  'debating the appeal of nostalgia',
-  'exploring reality TV influence on society',
-  'discussing museum and art accessibility',
-  'exploring language preservation efforts',
-  'debating music streaming versus physical media',
-  'discussing celebrity culture impact',
-  'exploring different film genres',
-  'discussing podcast popularity reasons',
-  'sharing adult learning experiences',
-  'discussing overcoming perfectionism',
-  'comparing time management philosophies',
-  'exploring habit-building strategies',
-  'discussing public speaking anxiety',
-  'debating financial literacy importance',
-  'sharing creative hobbies and their benefits',
-  'discussing mentorship relationships',
-  'exploring the self-improvement industry',
-  'comparing goal-setting strategies',
-  'discussing maintaining long-distance friendships',
-  'exploring family expectations versus personal choices',
-  'debating dating in the digital age',
-  'discussing multi-generational households',
-  'exploring the choice to have children',
-  'debating work friendships boundaries',
-  'comparing cultural differences in parenting',
-  'discussing solo living versus roommates',
-  'exploring community building in neighborhoods',
-  'discussing neighborly disputes resolution',
-  'debating minimalism versus collecting',
-  'exploring subscription service value',
-  'discussing smart shopping strategies',
-  'comparing gig economy pros and cons',
-  'discussing housing market challenges',
-  'debating saving versus investing strategies',
-  'exploring secondhand shopping benefits',
-  'discussing brand loyalty in modern times',
-  'exploring consumer rights awareness',
-  'debating sharing economy services',
-  'discussing online degrees credibility',
-  'exploring lifelong learning importance',
-  'debating student loan management',
-  'discussing gap year benefits and drawbacks',
-  'exploring different education paths',
-  'comparing vocational training to university',
-  'discussing different learning styles',
-  'sharing study abroad experiences',
-  'debating technology use in classrooms',
-  'exploring critical thinking skills development',
-  'discussing respectful tourism practices',
-  'exploring cultural sensitivity while traveling',
-  'debating digital nomad lifestyle',
-  'discussing language learning while traveling',
-  'exploring travel budgeting strategies',
-  'comparing travel planning approaches',
-  'debating adventure travel versus relaxation',
-  'sharing solo travel experiences',
-  'discussing cultural shock adjustment',
-  'exploring wildlife watching and nature tourism',
-  'debating plant-based diet considerations',
-  'discussing food allergies and dining out',
-  'exploring meal planning strategies',
-  'discussing restaurant tipping culture',
-  'debating cooking skills importance',
-  'exploring ethnic cuisine authenticity',
-  'discussing seasonal cooking and local ingredients',
-  'debating intermittent fasting trends',
-  'exploring farmers markets and local food',
-  'comparing cooking from scratch to convenience foods',
-  'discussing side hustles and passive income',
-  'exploring imposter syndrome in professional life',
-  'debating college major selection factors',
-  'discussing burnout prevention strategies',
-  'exploring personal finance apps and budgeting',
-  'debating rent versus buy decisions',
-  'discussing creative problem-solving approaches',
-  'exploring the four-day work week concept',
-]
-
 // Simple seeded random number generator for deterministic theme selection
 const seededRandom = (seed: number): number => {
   const x = Math.sin(seed) * 10000
@@ -269,23 +36,22 @@ const seededRandom = (seed: number): number => {
 // Select themes for a given date (deterministic based on date)
 export const selectThemesForDate = (
   date: Date
-): { early: string; intermediate: string } => {
+): { A1: string; A2: string; B1: string; B2: string } => {
   // Create a seed from the date (YYYYMMDD format)
   const seed =
     date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
-  // Use seed to select indices
-  const earlyConversationIndex = Math.floor(
-    seededRandom(seed) * EARLY_LEVEL_THEMES.length
-  )
-  const intermediateConversationIndex = Math.floor(
-    seededRandom(seed + 1) * INTERMEDIATE_LEVEL_THEMES.length
-  )
+  // Use seed to select indices for each level
+  const a1Index = Math.floor(seededRandom(seed) * A1_THEMES.length)
+  const a2Index = Math.floor(seededRandom(seed + 1) * A2_THEMES.length)
+  const b1Index = Math.floor(seededRandom(seed + 2) * B1_THEMES.length)
+  const b2Index = Math.floor(seededRandom(seed + 3) * B2_THEMES.length)
 
   return {
-    early: EARLY_LEVEL_THEMES[earlyConversationIndex] || '',
-    intermediate:
-      INTERMEDIATE_LEVEL_THEMES[intermediateConversationIndex] || '',
+    A1: A1_THEMES[a1Index] || '',
+    A2: A2_THEMES[a2Index] || '',
+    B1: B1_THEMES[b1Index] || '',
+    B2: B2_THEMES[b2Index] || '',
   }
 }
 
@@ -512,11 +278,11 @@ export class StoryGenerationService {
     console.log(`Generating story for ${language} at the ${level} level...`)
 
     // If no theme provided, select one for today
-    const selectedTheme =
-      theme ||
-      (EARLY_LEVELS.includes(level)
-        ? selectThemesForDate(new Date()).early
-        : selectThemesForDate(new Date()).intermediate)
+    let selectedTheme = theme
+    if (!selectedTheme) {
+      const themes = selectThemesForDate(new Date())
+      selectedTheme = themes[level as 'A1' | 'A2' | 'B1' | 'B2']
+    }
 
     const response = await this.client.messages.create({
       model: 'claude-sonnet-4-5',
@@ -555,17 +321,17 @@ export class StoryGenerationService {
     // Select themes for this date
     const themes = selectThemesForDate(date)
     console.log(`Selected themes for ${year}-${month}-${day}:`)
-    console.log(`  Early (A1/A2): ${themes.early}`)
-    console.log(`  Intermediate (B1/B2): ${themes.intermediate}`)
+    console.log(`  A1: ${themes.A1}`)
+    console.log(`  A2: ${themes.A2}`)
+    console.log(`  B1: ${themes.B1}`)
+    console.log(`  B2: ${themes.B2}`)
 
     // Create batch requests
     const batchRequests = []
     for (const language of languages) {
       for (const level of levels) {
         // Select appropriate theme based on level
-        const theme = EARLY_LEVELS.includes(level)
-          ? themes.early
-          : themes.intermediate
+        const theme = themes[level as 'A1' | 'A2' | 'B1' | 'B2']
 
         batchRequests.push({
           custom_id: `${year}${month}${day}-${language.toLowerCase()}-${level.toLowerCase()}`,
