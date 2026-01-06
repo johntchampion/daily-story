@@ -13,6 +13,11 @@
     <div class="container story">
         <h1 class="story-title"><%= title %></h1>
         <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
+        <div class="story-audio-controls" aria-label="Story audio controls">
+            <button class="btn btn-primary story-audio-btn" id="playStoryBtn" type="button">Play</button>
+            <button class="btn btn-secondary story-audio-btn" id="pauseStoryBtn" type="button">Pause</button>
+            <button class="btn btn-secondary story-audio-btn" id="resetStoryBtn" type="button">Reset</button>
+        </div>
         <% if (messages && messages.length > 0) { %>
             <% messages.forEach((message, index) => { %>
                 <div class="message">
@@ -80,6 +85,120 @@
     </div>
 
     <script>
+        const storyMessages = <%- JSON.stringify(messages || []) %>;
+        const storyText = <%- JSON.stringify(story || '') %>;
+        const storySegments = storyMessages.length
+            ? storyMessages.map(message => ({
+                speaker: message.sender || 'Narrator',
+                text: message.text
+            }))
+            : (storyText ? [{ speaker: 'Narrator', text: storyText }] : []);
+
+        const playButton = document.getElementById('playStoryBtn');
+        const pauseButton = document.getElementById('pauseStoryBtn');
+        const resetButton = document.getElementById('resetStoryBtn');
+
+        let currentIndex = 0;
+        let utterances = [];
+        let isSpeaking = false;
+
+        function updateButtons() {
+            const hasSpeech = utterances.length > 0;
+            const isPaused = speechSynthesis.paused;
+            playButton.disabled = !hasSpeech || (speechSynthesis.speaking && !isPaused);
+            pauseButton.disabled = !hasSpeech || !speechSynthesis.speaking || isPaused;
+            resetButton.disabled = !hasSpeech || (!speechSynthesis.speaking && !isPaused && currentIndex === 0);
+        }
+
+        function assignVoices(voices) {
+            const speakers = [...new Set(storySegments.map(segment => segment.speaker))];
+            const voiceMap = new Map();
+            speakers.forEach((speaker, index) => {
+                if (voices.length > 0) {
+                    voiceMap.set(speaker, voices[index % voices.length] || null);
+                } else {
+                    voiceMap.set(speaker, null);
+                }
+            });
+            utterances = storySegments.map(segment => {
+                const utterance = new SpeechSynthesisUtterance(segment.text);
+                const assignedVoice = voiceMap.get(segment.speaker);
+                if (assignedVoice) {
+                    utterance.voice = assignedVoice;
+                }
+                utterance.onend = () => {
+                    if (currentIndex < utterances.length - 1) {
+                        currentIndex += 1;
+                        speakCurrent();
+                    } else {
+                        isSpeaking = false;
+                        updateButtons();
+                    }
+                };
+                utterance.onerror = () => {
+                    isSpeaking = false;
+                    updateButtons();
+                };
+                return utterance;
+            });
+            updateButtons();
+        }
+
+        function loadVoices() {
+            const voices = speechSynthesis.getVoices();
+            assignVoices(voices);
+        }
+
+        function speakCurrent() {
+            if (!utterances.length || currentIndex >= utterances.length) {
+                return;
+            }
+            isSpeaking = true;
+            speechSynthesis.speak(utterances[currentIndex]);
+            updateButtons();
+        }
+
+        if (!('speechSynthesis' in window)) {
+            playButton.disabled = true;
+            pauseButton.disabled = true;
+            resetButton.disabled = true;
+        } else if (storySegments.length === 0) {
+            updateButtons();
+        } else {
+            loadVoices();
+            speechSynthesis.onvoiceschanged = loadVoices;
+            updateButtons();
+        }
+
+        playButton.addEventListener('click', () => {
+            if (!utterances.length) {
+                return;
+            }
+            if (speechSynthesis.speaking && speechSynthesis.paused) {
+                speechSynthesis.resume();
+                updateButtons();
+                return;
+            }
+            if (speechSynthesis.speaking) {
+                return;
+            }
+            speakCurrent();
+        });
+
+        pauseButton.addEventListener('click', () => {
+            if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                speechSynthesis.pause();
+                updateButtons();
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            speechSynthesis.cancel();
+            currentIndex = 0;
+            isSpeaking = false;
+            updateButtons();
+        });
+
         function selectAnswer(element) {
             const optionsList = element.parentElement;
             const allOptions = optionsList.querySelectorAll('li');

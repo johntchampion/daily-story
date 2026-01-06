@@ -28,6 +28,24 @@
     margin-bottom: 2rem;
 }
 
+.story-audio-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.story-audio-btn {
+    min-width: 120px;
+}
+
+.story-audio-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .message {
     margin-bottom: 18px;
     padding: 14px 18px;
@@ -231,6 +249,16 @@
         font-size: 0.9rem;
     }
 
+    .story-audio-controls {
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .story-audio-btn {
+        flex: 1 1 120px;
+        padding: 12px 18px;
+    }
+
     .message {
         margin-bottom: 12px;
         padding: 10px 12px;
@@ -297,6 +325,15 @@
         font-size: 1.3rem;
     }
 
+    .story-audio-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .story-audio-btn {
+        width: 100%;
+    }
+
     .question h3 {
         font-size: 1rem;
     }
@@ -342,6 +379,11 @@
 
     .story-date {
         color: #FCD34D;
+    }
+
+    .story-audio-btn:disabled {
+        opacity: 0.5;
+        box-shadow: none;
     }
 
     .message .sender {
