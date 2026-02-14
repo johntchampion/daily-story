@@ -8,6 +8,102 @@
     <title><%= language %> (<%= level %>) - Daily Story</title>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/story.css">
+
+    <script>
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags resetGroups onFeatureFlags addFeatureFlagsHandler onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init('phc_iUdVH98M9tw8Qt3iOYecZpubxPZKhGtLfXc5poXS1wR', {
+            api_host: 'https://us.i.posthog.com',
+            defaults: '2026-01-30',
+            capture_pageleave: false
+        })
+    </script>
+    <script>
+        let maxScrollPercentage = 0;
+
+        function calculateStoryScrollPercentage() {
+            const storyContainer = document.querySelector('.container.story');
+            if (!storyContainer) return 0;
+
+            const storyTop = storyContainer.offsetTop;
+            const storyHeight = storyContainer.offsetHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const scrollBottom = scrollTop + windowHeight;
+
+            // Calculate how much of the story has been scrolled into view
+            const visibleBottom = Math.min(scrollBottom, storyTop + storyHeight);
+            const storyScrolled = Math.max(0, visibleBottom - storyTop);
+            const percentage = Math.round((storyScrolled / storyHeight) * 100);
+
+            return Math.min(100, Math.max(0, percentage));
+        }
+
+        function calculatePageScrollPercentage() {
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            return Math.round((scrollTop / (documentHeight - windowHeight)) * 100) || 0;
+        }
+
+        function hasViewedQuiz() {
+            const quizSection = document.querySelector('.questions');
+            if (!quizSection) return false;
+
+            const quizTop = quizSection.getBoundingClientRect().top + window.pageYOffset;
+            const scrollBottom = window.pageYOffset + window.innerHeight;
+            return scrollBottom >= quizTop;
+        }
+
+        function updateMaxScroll() {
+            const currentScroll = calculateStoryScrollPercentage();
+            if (currentScroll > maxScrollPercentage) {
+                maxScrollPercentage = currentScroll;
+            }
+        }
+
+        window.addEventListener('scroll', updateMaxScroll);
+
+        function handlePageleave(event) {
+            const lastScrollPercentage = calculateStoryScrollPercentage();
+            const viewedQuiz = hasViewedQuiz();
+
+            // Calculate quiz completion and score
+            const allQuestions = document.querySelectorAll('.question');
+            const answeredQuestions = document.querySelectorAll('.options.answered');
+            const totalQuestions = allQuestions.length;
+            const answeredCount = answeredQuestions.length;
+
+            let quizCompletion = 0;
+            let quizScore = undefined;
+
+            if (totalQuestions > 0) {
+                quizCompletion = Math.round((answeredCount / totalQuestions) * 100);
+
+                if (answeredCount > 0) {
+                    // Count correct answers
+                    // If user selected wrong answer, there will be an 'incorrect' element
+                    // If user selected right answer, there will only be a 'correct' element (no 'incorrect')
+                    let correctCount = 0;
+                    answeredQuestions.forEach(optionsList => {
+                        const hasIncorrect = optionsList.querySelector('li.incorrect');
+                        if (!hasIncorrect) {
+                            correctCount++;
+                        }
+                    });
+                    quizScore = Math.round((correctCount / answeredCount) * 100);
+                }
+            }
+
+            posthog.capture('$pageleave', {
+                'max_scroll_percentage': maxScrollPercentage,
+                'last_scroll_percentage': lastScrollPercentage,
+                'viewed_quiz': viewedQuiz,
+                'quiz_completion': quizCompletion,
+                'quiz_score': quizScore
+            });
+        }
+        window.addEventListener('beforeunload', handlePageleave)
+    </script>
 </head>
 <body>
     <div class="container story">
