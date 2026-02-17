@@ -16,6 +16,7 @@
 - **AI Provider:** Anthropic AI SDK 0.68.0 (Claude Sonnet 4.5)
 - **Storage:** File-based JSON (no database)
 - **Build Tools:** TypeScript, tsx, nodemon, copyfiles
+- **Analytics:** PostHog
 
 ## Project Structure
 
