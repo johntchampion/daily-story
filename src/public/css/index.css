@@ -119,6 +119,10 @@ a:hover {
     }
 
     .container {
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
         padding: 25px;
         margin: 1.5rem auto;
     }
@@ -185,5 +189,14 @@ a:hover {
     a:hover {
         color: #FDE68A;
         border-bottom-color: #FCD34D;
+    }
+}
+
+/* Dark mode: keep container transparent on mobile */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    .container {
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
     }
 }

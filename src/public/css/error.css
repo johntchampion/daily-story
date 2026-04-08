@@ -2,6 +2,10 @@ body {
     text-align: center;
 }
 
+h1 {
+    font-size: 2.5rem;
+}
+
 .error-container {
     background-color: #FEF2F2;
     border: 2px solid #FECACA;
@@ -37,18 +41,23 @@ body {
     border-radius: 10px;
     padding: 18px;
     margin-top: 24px;
+    margin-bottom: 1.2rem;
     text-align: left;
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
-.btn {
-    margin-top: 2rem;
-}
-
 /* Mobile responsive styles */
 @media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+
     .error-container {
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
         padding: 25px;
         margin-top: 30px;
     }
@@ -65,15 +74,16 @@ body {
     .error-details {
         font-size: 14px;
         padding: 12px;
-    }
-
-    .btn {
-        margin-top: 1.2rem;
+        margin-bottom: 1.2rem;
     }
 }
 
 /* Extra small mobile devices */
 @media (max-width: 480px) {
+    h1 {
+        font-size: 2rem;
+    }
+
     .error-container {
         padding: 20px;
         margin-top: 20px;
@@ -89,6 +99,7 @@ body {
 
     .error-details {
         font-size: 13px;
+        margin-bottom: 1.2rem;
     }
 }
 
@@ -110,5 +121,14 @@ body {
         background-color: #451A03;
         border-color: #78350F;
         color: #FDE68A;
+    }
+}
+
+/* Dark mode: keep error container transparent on mobile */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    .error-container {
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
     }
 }

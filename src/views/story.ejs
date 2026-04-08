@@ -156,7 +156,7 @@
                     const newCorrectIndex = indices.indexOf(q.correctAnswer);
                 %>
                 <div class="question" data-question-index="<%= index %>">
-                    <h3>Question <%= index + 1 %>: <%= q.question %></h3>
+                    <h3><%= q.question %></h3>
                     <ul class="options" data-correct-answer="<%= newCorrectIndex %>">
                         <% shuffledOptions.forEach((option, optIndex) => { %>
                             <li data-option-index="<%= optIndex %>" onclick="selectAnswer(this)">
@@ -205,6 +205,34 @@
                 // Also show the correct answer
                 allOptions[correctIndex].classList.add('correct');
             }
+
+            // Check for perfect score after each answer
+            const totalQuestions = document.querySelectorAll('.options').length;
+            const answeredQuestions = document.querySelectorAll('.options.answered');
+            if (answeredQuestions.length === totalQuestions) {
+                const anyIncorrect = document.querySelectorAll('.options.answered li.incorrect').length > 0;
+                if (!anyIncorrect) {
+                    triggerPerfectScore();
+                }
+            }
+        }
+
+        function triggerPerfectScore() {
+            const emojis = ['⭐', '🌟', '✨', '⭐', '🌟', '✨', '⭐'];
+            const lastCorrect = document.querySelectorAll('.options li.correct');
+            const anchor = lastCorrect[lastCorrect.length - 1];
+            const rect = anchor.getBoundingClientRect();
+
+            emojis.forEach((emoji, i) => {
+                const el = document.createElement('span');
+                el.className = 'emoji-particle';
+                el.textContent = emoji;
+                el.style.left = (rect.left + rect.width * (0.1 + 0.8 * (i / (emojis.length - 1)))) + 'px';
+                el.style.top = rect.top + 'px';
+                el.style.animationDelay = (i * 60) + 'ms';
+                document.body.appendChild(el);
+                el.addEventListener('animationend', () => el.remove());
+            });
         }
     </script>
 </body>

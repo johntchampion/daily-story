@@ -30,7 +30,7 @@
 
 .message {
     margin-bottom: 18px;
-    padding: 14px 18px;
+    padding: 14px 0;
 }
 
 .message .sender {
@@ -45,23 +45,12 @@
 
 .questions {
     margin-top: 3rem;
-    padding-top: 3rem;
-    border-top: 3px solid #F59E0B;
+    padding: 0 1rem;
 }
 
 .question {
-    background-color: #FFFBF5;
-    border: 2px solid #F3E8D7;
-    padding: 24px;
+    padding: 6px 0;
     margin-bottom: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.05);
-    transition: all 0.3s ease;
-}
-
-.question:hover {
-    border-color: #FCD34D;
-    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.1);
 }
 
 .question h3 {
@@ -114,6 +103,20 @@
 .options li.disabled {
     cursor: not-allowed;
     opacity: 0.5;
+}
+
+@keyframes emoji-pop {
+    0%   { transform: translateY(0) scale(0); opacity: 1; }
+    20%  { transform: translateY(-20px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-80px) scale(0.8); opacity: 0; }
+}
+
+.emoji-particle {
+    position: fixed;
+    font-size: 1.5rem;
+    pointer-events: none;
+    animation: emoji-pop 1s ease-out forwards;
+    z-index: 1000;
 }
 
 .bookmark-message {
@@ -224,7 +227,7 @@
     }
 
     .story-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
     }
 
     .story-date {
@@ -233,12 +236,7 @@
 
     .message {
         margin-bottom: 12px;
-        padding: 10px 12px;
-    }
-
-    .question {
-        padding: 12px;
-        margin-bottom: 15px;
+        padding: 10px 0px;
     }
 
     .question h3 {
@@ -294,7 +292,7 @@
     }
 
     .story-title {
-        font-size: 1.3rem;
+        font-size: 1.75rem;
     }
 
     .question h3 {
@@ -353,12 +351,11 @@
     }
 
     .question {
-        background-color: #44403C;
-        border-color: #57534E;
+        border-left-color: #57534E;
     }
 
     .question:hover {
-        border-color: #D97706;
+        border-left-color: #78716C;
     }
 
     .question h3 {
