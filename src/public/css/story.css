@@ -105,6 +105,20 @@
     opacity: 0.5;
 }
 
+@keyframes emoji-pop {
+    0%   { transform: translateY(0) scale(0); opacity: 1; }
+    20%  { transform: translateY(-20px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-80px) scale(0.8); opacity: 0; }
+}
+
+.emoji-particle {
+    position: fixed;
+    font-size: 1.5rem;
+    pointer-events: none;
+    animation: emoji-pop 1s ease-out forwards;
+    z-index: 1000;
+}
+
 .bookmark-message {
     text-align: center;
     margin-top: 3rem;
