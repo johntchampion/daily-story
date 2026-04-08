@@ -45,23 +45,12 @@
 
 .questions {
     margin-top: 3rem;
-    padding-top: 3rem;
-    border-top: 3px solid #F59E0B;
+    padding: 0 1rem;
 }
 
 .question {
-    background-color: #FFFBF5;
-    border: 2px solid #F3E8D7;
-    padding: 24px;
+    padding: 6px 0;
     margin-bottom: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.05);
-    transition: all 0.3s ease;
-}
-
-.question:hover {
-    border-color: #FCD34D;
-    box-shadow: 0 4px 16px rgba(217, 119, 6, 0.1);
 }
 
 .question h3 {
@@ -218,6 +207,14 @@
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
+    .container.story {
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        margin: 0 auto;
+    }
+
     .story {
         padding: 1.5rem 1.25rem;
         font-size: 1.1rem;
@@ -234,11 +231,6 @@
     .message {
         margin-bottom: 12px;
         padding: 10px 0px;
-    }
-
-    .question {
-        padding: 12px;
-        margin-bottom: 15px;
     }
 
     .question h3 {
@@ -353,12 +345,11 @@
     }
 
     .question {
-        background-color: #44403C;
-        border-color: #57534E;
+        border-left-color: #57534E;
     }
 
     .question:hover {
-        border-color: #D97706;
+        border-left-color: #78716C;
     }
 
     .question h3 {
