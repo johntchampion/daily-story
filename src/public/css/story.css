@@ -207,21 +207,13 @@
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
-    .container.story {
-        background-color: transparent;
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        margin: 0 auto;
-    }
-
     .story {
         padding: 1.5rem 1.25rem;
         font-size: 1.1rem;
     }
 
     .story-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
     }
 
     .story-date {
@@ -286,7 +278,7 @@
     }
 
     .story-title {
-        font-size: 1.3rem;
+        font-size: 1.75rem;
     }
 
     .question h3 {
