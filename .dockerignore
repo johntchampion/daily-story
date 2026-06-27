@@ -2,6 +2,7 @@ assets/
 dist/
 node_modules/
 stories/
+database/
 .env
 .git
 .gitignore

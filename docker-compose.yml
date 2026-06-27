@@ -1,0 +1,44 @@
+services:
+  daily-story-db:
+    build:
+      context: ./database
+    container_name: daily-story-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Exposed on the host for local debugging (psql, GUI clients).
+    ports:
+      - '5432:5432'
+
+  app:
+    build:
+      context: .
+    container_name: daily-story-app
+    restart: unless-stopped
+    depends_on:
+      daily-story-db:
+        condition: service_healthy
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      PORT: ${PORT:-3000}
+      NODE_ENV: production
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+    # Persist generated stories across container restarts.
+    volumes:
+      - stories:/app/stories
+
+volumes:
+  db-data:
+  stories:

@@ -14,26 +14,47 @@
 - **Framework:** Express.js 5.1.0
 - **Template Engine:** EJS 3.1.10
 - **AI Provider:** Anthropic AI SDK 0.68.0 (Claude Sonnet 4.5)
-- **Storage:** File-based JSON (no database)
+- **Storage:**
+  - Stories: file-based JSON (organized by date)
+  - User accounts: PostgreSQL 18 (via `pg`)
+- **Auth:** `express-session` (cookie sessions) + `bcrypt` (password hashing)
 - **Build Tools:** TypeScript, tsx, nodemon, copyfiles
+- **Containerization:** Docker + Docker Compose (app + Postgres)
 - **Analytics:** PostHog
 
 ## Project Structure
 
 ```
 src/
-├── index.ts           # Main Express app (routes, middleware)
+├── index.ts           # Main Express app (routes, middleware, session setup)
 ├── storyService.ts    # Story generation service (class-based)
 ├── themes.ts          # Theme arrays for each proficiency level
+├── db.ts              # Shared Postgres connection pool (via DATABASE_URL)
+├── models/
+│   └── user.ts        # User model (CRUD, bcrypt password hashing)
+├── routes/
+│   └── auth.ts        # Signup / login / logout routes + requireAuth middleware
+├── types/
+│   └── session.d.ts   # express-session augmentation (session.userId)
 ├── views/             # EJS templates
-│   ├── home.ejs       # Language/level selection page
+│   ├── home.ejs       # Language/level selection page (+ login/logout link)
 │   ├── story.ejs      # Story display with quiz
+│   ├── login.ejs      # Login form
+│   ├── signup.ejs     # Signup form
 │   ├── no-story-today.ejs
 │   └── error.ejs
 └── public/css/        # Stylesheets (dark mode support)
+    └── auth.css       # Login / signup form styles
+
+database/              # Postgres container + schema
+├── Dockerfile         # postgres:18 image, runs setup.sql on first init
+└── setup.sql          # users table, indexes, updated_at trigger
 
 stories/               # Generated stories (gitignored)
 └── YYYY/MM/DD/{language}/{level}/story.json
+
+Dockerfile             # Multi-stage build for the Node app
+docker-compose.yml     # Spins up the app + Postgres together
 ```
 
 ## Key Concepts
@@ -83,17 +104,63 @@ This architecture allows:
 - Date-based "story of the day" concept
 - Pre-generation for future dates
 - Simple cleanup/archival
-- No database required
+
+Note: story _content_ remains file-based. PostgreSQL is used only for user
+accounts (see below), not for stories or quiz results.
+
+### User Accounts (PostgreSQL)
+
+User accounts are stored in PostgreSQL, accessed through a shared connection
+pool in `src/db.ts` (configured via `DATABASE_URL`). The schema lives in
+`database/setup.sql` and is applied automatically when the DB container is
+first initialized.
+
+**`users` table:**
+
+- `id` (BIGINT identity, PK)
+- `email` (TEXT, unique; case-insensitive lookups via a `lower(email)` index)
+- `hashed_password` (TEXT, bcrypt with cost factor 12)
+- `created_at`, `updated_at` (TIMESTAMPTZ; `updated_at` maintained by a trigger)
+- `last_logged_in` (TIMESTAMPTZ, nullable)
+
+**`User` model (`src/models/user.ts`):**
+
+- `User.register({ email, password })` — hash password, validate/normalize email, persist
+- `User.create({ email, hashedPassword })` — persist a pre-hashed account
+- `User.findById(id)` / `User.findByEmail(email)` — load (null if missing)
+- `user.verifyPassword(password)` — bcrypt compare
+- `user.recordLogin()` — stamp `last_logged_in`
+- `user.save()` / `user.delete()` — update / remove
+
+Emails are normalized (trimmed + lowercased) and format-validated before any
+write, pairing with the `lower(email)` unique index.
+
+### Authentication & Sessions
+
+- Cookie-based sessions via `express-session` (configured in `src/index.ts`).
+  - Currently the default **in-memory** store (drops sessions on restart; swap
+    for a persistent store like `connect-pg-simple` before production).
+  - Cookie: `httpOnly`, `sameSite: 'lax'`, 30-day `maxAge`.
+- `src/types/session.d.ts` augments `SessionData` with `userId?: number`.
+- Auth routes in `src/routes/auth.ts`:
+  - `GET/POST /signup`, `GET/POST /login`, `POST /logout`
+  - Login uses a generic "Invalid email or password" message (no user enumeration)
+  - `requireAuth` middleware redirects unauthenticated requests to `/login`
+- The home page (`home.ejs`) shows a **Log in** link when logged out and a
+  **Sign out** button (POSTs to `/logout`) when logged in, driven by the
+  `isLoggedIn` flag passed from the `/` route.
 
 ## Important Files
 
-### src/index.ts (274 lines)
+### src/index.ts
 
 Main Express application containing:
 
-- Route handlers: `/`, `/generate-stories`, `/:language/:level`
+- Body parsing (`urlencoded` + `json`) and `express-session` setup
+- Mounts auth routes (`src/routes/auth.ts`)
+- Route handlers: `/`, `/about`, `/generate-stories`, `/:language/:level`
 - Story file loading logic
-- Template rendering
+- Template rendering (passes `isLoggedIn` to the home page)
 - Error handling middleware
 - StoryGenerationService initialization
 
@@ -247,7 +314,18 @@ Themes are selected deterministically based on date:
 Required:
 
 - `ANTHROPIC_API_KEY` - API key for Claude (do NOT access .env file)
+- `DATABASE_URL` - Postgres connection string for user accounts (e.g. `postgres://user:pass@host:5432/daily_story`)
 - `PORT` - Server port (optional, defaults to 3000)
+- `SESSION_SECRET` - Secret used to sign session cookies (falls back to an insecure dev value; set a strong value in production)
+
+Used by Docker Compose (Postgres container; must match the credentials encoded
+in `DATABASE_URL`):
+
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+
+All of the above are read from `.env` (gitignored, also excluded via
+`.dockerignore` so it isn't baked into images). Compose loads `.env` for both
+variable substitution and the container environment.
 
 ## Development Commands
 
@@ -256,6 +334,23 @@ npm run dev      # Development with auto-reload (tsx + nodemon)
 npm run build    # Compile TypeScript + copy assets to dist/
 npm start        # Run compiled production build
 ```
+
+### Docker
+
+```bash
+docker compose up --build   # Build + run the app and Postgres together
+docker compose down         # Stop and remove containers
+docker compose down -v      # Also remove volumes (wipes DB + stories data)
+```
+
+- `app` service builds from the root `Dockerfile` (multi-stage) and waits for
+  the DB to pass its healthcheck (`depends_on … condition: service_healthy`).
+- `daily-story-db` service builds from `database/Dockerfile` (postgres:18) and
+  runs `setup.sql` on first init. The app reaches it at host `daily-story-db`
+  (the service name), which is what `DATABASE_URL` points to.
+- Named volumes persist data: `db-data` (Postgres) and `stories` (generated
+  stories). Postgres 18 mounts `db-data` at `/var/lib/postgresql` (not
+  `/var/lib/postgresql/data`).
 
 ## Important Notes
 
@@ -290,7 +385,7 @@ npm start        # Run compiled production build
   - B1: 130 intermediate opinion topics
   - B2: 126 advanced debate topics
 - All 8 languages at same level use the same theme on a given day
-- No user accounts or progress tracking
+- User accounts exist (email/password) but are not yet tied to story content or progress
 - Quiz results are client-side only (not persisted)
 
 ## Common Tasks
@@ -325,13 +420,33 @@ npm start        # Run compiled production build
 - JavaScript handles all quiz interactivity
 - No backend changes needed for quiz logic
 
+### Changing the Database Schema
+
+1. Edit `database/setup.sql` (idempotent — uses `IF NOT EXISTS`)
+2. `setup.sql` only runs on first DB init; to re-apply locally either:
+   - `docker compose down -v` then `up` (wipes data), or
+   - `psql "$DATABASE_URL" -f database/setup.sql` against the running DB
+3. Update the `User` model (`src/models/user.ts`) and `UserRow` type to match
+
+### Protecting a Route (require login)
+
+- Import `requireAuth` from `src/routes/auth.ts` and add it as middleware:
+  `app.get('/some-page', requireAuth, handler)`
+- Unauthenticated requests are redirected to `/login`
+- The logged-in user id is available as `req.session.userId`
+
 ## Architecture Decisions
 
-**File-Based Storage vs Database:**
+**File-Based Storage for Stories:**
 
-- Chosen for simplicity and zero infrastructure requirements
-- Trade-off: No user accounts, analytics, or progress tracking
+- Story content stays in date-organized JSON files (simple, no DB needed for the core read experience)
 - Suitable for small-to-medium scale deployment
+
+**PostgreSQL for User Accounts:**
+
+- Added to support authentication (email/password) which file storage can't safely handle
+- Accessed via a single shared connection pool (`src/db.ts`)
+- Story content intentionally stays file-based; the DB is scoped to accounts
 
 **Async Batch Generation:**
 
@@ -366,18 +481,26 @@ npm start        # Run compiled production build
 5. **Date-Based Keys:** Stories are keyed by date, so timezone differences could cause confusion
 6. **Theme Consistency:** All languages at the same level use the same theme on a given date, but each level (A1, A2, B1, B2) gets a different theme (by design)
 7. **Batch ID Format:** Custom IDs use format `YYYYMMDD-language-level` to identify date and content
+8. **DB Init Runs Once:** `database/setup.sql` only executes when the Postgres data volume is empty. Schema changes won't apply to an existing volume unless you re-run the SQL or recreate the volume (`docker compose down -v`)
+9. **In-Memory Sessions:** The session store is in-memory, so restarting the app logs everyone out. Use a persistent store before production
+10. **DATABASE_URL Host:** Inside Compose the DB host is the service name `daily-story-db`, not `localhost`. Running the app outside Compose against the containerized DB needs `localhost:5432` instead
+11. **Postgres 18 Volume Path:** Data is mounted at `/var/lib/postgresql` (version-specific subdir), not the older `/var/lib/postgresql/data`
 
 ## Security Notes
 
-- API keys stored in environment variables (never committed)
-- No user authentication or session management
+- Secrets (`ANTHROPIC_API_KEY`, `DATABASE_URL`, `SESSION_SECRET`) stored in environment variables (`.env` is gitignored and dockerignored, never committed)
+- Authentication via email/password with bcrypt-hashed passwords (cost 12); plaintext passwords are never stored
+- Sessions are cookie-based (`httpOnly`, `sameSite: 'lax'`); set a strong `SESSION_SECRET` in production
+- Login uses a generic error message to avoid user enumeration
+- SQL uses parameterized queries (`pg`) — no string interpolation, so no SQL injection risk
 - Error messages sanitized in production
-- No SQL injection risk (no database)
 - No XSS risk (EJS auto-escapes by default)
+- **Production TODO:** the session store is in-memory (see `src/index.ts`); switch to a persistent store (e.g. `connect-pg-simple`) before deploying
 
 ## Future Enhancement Opportunities
 
-- User accounts and progress tracking
+- Progress tracking tied to user accounts (accounts exist; content is not yet linked)
+- Persistent session store (`connect-pg-simple`)
 - Audio pronunciation support
 - Vocabulary highlighting and definitions
 - Adjustable difficulty based on user feedback

@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import path from 'path'
 import express, { Request, Response } from 'express'
+import session from 'express-session'
 import { readFile } from 'fs/promises'
 import {
   StoryGenerationService,
@@ -9,6 +10,7 @@ import {
   INTERMEDIATE_LEVELS,
   StoryContent,
 } from './storyService'
+import authRoutes from './routes/auth'
 
 // Initialize the story generation service
 const storyService = new StoryGenerationService(
@@ -20,12 +22,36 @@ app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
 app.use(express.static(path.join(__dirname, 'public')))
 
+// Parse form-encoded and JSON request bodies
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+
+// Session middleware. Uses the default in-memory store, which is fine for
+// development but drops sessions on restart and leaks memory — swap for a
+// persistent store (e.g. connect-pg-simple) before production.
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'dev-insecure-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    },
+  })
+)
+
+// Authentication routes (signup, login, logout)
+app.use(authRoutes)
+
 // Home page route
-app.get('/', (_req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
   res.render('home', {
     languages: SUPPORTED_LANGUAGES,
     earlyLevels: EARLY_LEVELS,
     intermediateLevels: INTERMEDIATE_LEVELS,
+    isLoggedIn: Boolean(req.session.userId),
   })
 })
 

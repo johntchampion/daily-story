@@ -23,6 +23,15 @@
         <h1>Daily Story</h1>
         <p class="subtitle">Read a daily story in the language you're learning at your skill level.</p>
         <p class="about-link-container"><a href="/about" class="about-link">Learn more about Daily Story</a></p>
+        <p class="auth-link-container">
+            <% if (isLoggedIn) { %>
+                <form action="/logout" method="post" class="auth-link-form">
+                    <button type="submit" class="auth-link">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login" class="auth-link">Log in</a>
+            <% } %>
+        </p>
 
         <form id="storyForm">
             <div class="form-group">
