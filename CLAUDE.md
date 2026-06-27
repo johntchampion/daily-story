@@ -33,7 +33,9 @@ src/
 ├── models/
 │   └── user.ts        # User model (CRUD, bcrypt password hashing)
 ├── routes/
-│   └── auth.ts        # Signup / login / logout routes + requireAuth middleware
+│   ├── auth.ts        # Signup / login / logout routes + requireAuth middleware
+│   ├── util.ts        # Utility/cron routes (/generate-stories)
+│   └── story.ts       # Story display route (/:language/:level)
 ├── types/
 │   └── session.d.ts   # express-session augmentation (session.userId)
 ├── views/             # EJS templates
@@ -154,15 +156,17 @@ write, pairing with the `lower(email)` unique index.
 
 ### src/index.ts
 
-Main Express application containing:
+Thin entry point that wires the app together:
 
 - Body parsing (`urlencoded` + `json`) and `express-session` setup
-- Mounts auth routes (`src/routes/auth.ts`)
-- Route handlers: `/`, `/about`, `/generate-stories`, `/:language/:level`
-- Story file loading logic
-- Template rendering (passes `isLoggedIn` to the home page)
-- Error handling middleware
-- StoryGenerationService initialization
+- Mounts routers: auth (`routes/auth.ts`), util (`routes/util.ts`), story (`routes/story.ts`)
+- Inline page routes: `/` (home, passes `isLoggedIn`) and `/about`
+- 404 and 500 error-handling middleware
+
+Route handlers themselves live in `src/routes/`:
+
+- `routes/util.ts` — `/generate-stories` (owns its `StoryGenerationService` instance)
+- `routes/story.ts` — `/:language/:level` story display + file loading
 
 **Key Routes:**
 
