@@ -52,6 +52,17 @@ app.get('/', (req: Request, res: Response) => {
   })
 })
 
+// Welcome page route — new first-impression experience, served in parallel
+// with the existing home page (`/`) while it's being evaluated.
+app.get('/welcome', (req: Request, res: Response) => {
+  res.render('welcome', {
+    languages: SUPPORTED_LANGUAGES,
+    earlyLevels: EARLY_LEVELS,
+    intermediateLevels: INTERMEDIATE_LEVELS,
+    isLoggedIn: Boolean(req.session.userId),
+  })
+})
+
 // About page route
 app.get('/about', (_req: Request, res: Response) => {
   res.render('about')
