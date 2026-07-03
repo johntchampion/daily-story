@@ -1,0 +1,72 @@
+/* "No story today" empty state. Loads after index.css, which owns the shared
+   foundation (palette, header/footer, tags, buttons). */
+
+.no-story {
+    padding-top: 48px;
+    padding-bottom: 60px;
+}
+
+.date-line {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+}
+
+.no-story h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(32px, 4.4vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0 0 18px;
+}
+
+.no-story-meta {
+    margin-bottom: 22px;
+}
+
+.story-tag {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 20px;
+    padding: 6px 13px;
+}
+
+.no-story-copy {
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0 0 30px;
+    max-width: 48ch;
+}
+
+.no-story-actions {
+    margin-bottom: 44px;
+}
+
+.end-mark {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #B7A98F;
+}
+
+.end-mark span.rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+.end-mark span.word {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 15px;
+    color: #A0937C;
+}

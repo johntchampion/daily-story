@@ -5,21 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/icon.png" />
-    <title>Error - Daily Story</title>
+    <title><%= status %> · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/error.css">
 </head>
 <body>
-    <div class="error-container">
-        <h1 class="error-code"><%= status %></h1>
-        <p class="error-message"><%= message %></p>
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/" class="nav-strong">Read today's story</a>
+        </nav>
+    </header>
+
+    <!-- ============ ERROR ============ -->
+    <main class="error-main">
+        <p class="eyebrow">Something went wrong</p>
+        <div class="error-code"><%= status %></div>
+        <h1 class="error-message"><%= message %></h1>
         <% if (details && process.env.NODE_ENV !== 'production') { %>
             <div class="error-details">
-                <strong>Details:</strong><br>
-                <%= details %>
+                <strong>Details</strong>
+                <p><%= details %></p>
             </div>
         <% } %>
-        <a href="/" class="back-link">Go Back Home</a>
-    </div>
+        <a href="/" class="btn-cta">Go back home →</a>
+    </main>
+
+    <footer class="site-footer">
+        <div class="brand">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </div>
+        <div class="footer-links">
+            <a href="/">Read today's story</a>
+            <a href="/about">About</a>
+        </div>
+        <div>Stories written fresh each day by Claude.</div>
+    </footer>
 </body>
 </html>

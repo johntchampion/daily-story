@@ -5,18 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/icon.png" />
-    <title>Daily Story - <%= language %> - <%= level %></title>
+    <title>No story yet — <%= language %> (<%= level %>) · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/index.css">
-    <link rel="stylesheet" href="/css/story.css">
+    <link rel="stylesheet" href="/css/no-story.css">
 </head>
 <body>
-    <div class="story">
-        <h1 class="story-title">No Story Available Today</h1>
-        <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
-        <p>A story hasn't been generated for today. Try checking again later!</p>
-    </div>
+    <div class="grain" aria-hidden="true"></div>
 
-    <div class="home-link-container"><a href="/" class="home-link">Select Language & Skill Level</a></div>
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/">Change language</a>
+            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login" class="nav-strong">Log in</a>
+            <% } %>
+        </nav>
+    </header>
 
+    <!-- ============ EMPTY STATE ============ -->
+    <main class="column no-story">
+        <time class="date-line" datetime="<%= dateISO %>"><%= date %></time>
+        <h1>Today's story isn't ready yet.</h1>
+        <div class="no-story-meta">
+            <span class="story-tag"><%= language %> · <%= level %></span>
+        </div>
+        <p class="no-story-copy">
+            Stories are written fresh each morning, and this one hasn't landed
+            yet. Check back in a little while — or try another language or
+            level in the meantime.
+        </p>
+        <div class="no-story-actions">
+            <a href="/" class="btn-cta">Pick a language &amp; level →</a>
+        </div>
+
+        <div class="end-mark" aria-hidden="true">
+            <span class="rule"></span>
+            <span class="word">· · ·</span>
+            <span class="rule"></span>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="brand">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </div>
+        <div class="footer-links">
+            <a href="/">Select language &amp; level</a>
+            <a href="/about">About</a>
+            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login">Log in</a>
+            <% } %>
+        </div>
+        <div>Stories written fresh each day by Claude.</div>
+    </footer>
 </body>
 </html>

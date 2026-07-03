@@ -1,200 +1,198 @@
-/* Page-specific heading adjustments */
-h1 {
-    font-size: 2.5rem;
+/* About page — editorial column layout. Loads after index.css, which owns the
+   shared foundation (palette, header/footer, buttons). */
+
+.about-main {
+    padding-bottom: 40px;
 }
 
-h2 {
-    margin-bottom: 18px;
-    font-size: 1.6rem;
-    margin-top: 2rem;
+.title-block {
+    padding-top: 38px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 12px;
 }
 
-h3 {
-    margin: 0 0 12px 0;
-    font-size: 1.25rem;
+.title-block h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(32px, 4.4vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+}
+
+.about-lead {
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0 0 22px;
+    max-width: 52ch;
 }
 
 .about-section {
-    margin-bottom: 40px;
+    margin-top: 44px;
+}
+
+.about-section h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
 }
 
 .about-section p {
-    color: #57534E;
-    line-height: 1.8;
-    margin: 12px 0;
-    font-size: 1.05rem;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
 }
 
-.cefr-intro {
-    margin-bottom: 24px;
-    font-style: italic;
-    color: #78716C;
-    font-size: 1.05rem;
+.text-link {
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent-line);
 }
 
-/* Level descriptions */
-.level-description {
-    margin-bottom: 28px;
+.text-link:hover {
+    color: var(--accent-hover);
 }
 
-.level-description h3 {
-    margin-bottom: 6px;
-    color: #1C1917;
-}
-
-.level-subtitle {
-    color: #78716C;
-    font-style: italic;
-    margin: 6px 0 10px 0 !important;
-    font-size: 1rem !important;
-}
-
-.level-description p {
-    margin: 8px 0;
-    font-size: 0.95rem;
-    color: #57534E;
-}
-
-.level-description strong {
-    color: #1C1917;
-    font-weight: 600;
-}
-
-/* Lists */
-.how-to-list {
-    list-style-position: outside;
-    padding-left: 24px;
-    margin: 18px 0;
-}
-
-.how-to-list li {
-    margin: 14px 0;
-    color: #57534E;
-    line-height: 1.8;
-    font-size: 1.05rem;
-}
-
-.how-to-list li::marker {
-    color: #F59E0B;
-    font-weight: 700;
-}
-
-.tips-list {
-    list-style-type: disc;
-    padding-left: 24px;
-    margin: 18px 0;
-}
-
-.tips-list li {
-    margin: 14px 0;
-    color: #57534E;
-    line-height: 1.8;
-    font-size: 1.05rem;
-}
-
-.tips-list li::marker {
-    color: #F59E0B;
-}
-
-/* Call-to-action buttons */
-.cta-buttons {
+/* Numbered steps — the reading ritual, in order */
+.steps {
+    list-style: none;
+    counter-reset: step;
+    margin: 18px 0 0;
+    padding: 0;
     display: flex;
-    gap: 15px;
-    margin-top: 40px;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 16px 18px 16px 58px;
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 18px;
+    top: 17px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
 }
 
-.cta-buttons .btn {
-    min-width: 150px;
+.steps strong {
+    color: var(--ink);
+    font-weight: 600;
 }
 
-/* Mobile responsive styles */
-@media (max-width: 768px) {
-    h1 {
-        font-size: 2rem;
-        margin-bottom: 25px;
-    }
-
-    h2 {
-        font-size: 1.3rem;
-    }
-
-    h3 {
-        font-size: 1.1rem;
-    }
-
-    .about-section {
-        margin-bottom: 30px;
-    }
-
-    .level-description {
-        margin-bottom: 24px;
-    }
-
-    .cta-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .btn {
-        width: 100%;
-        text-align: center;
-    }
+/* Level rows */
+.about-levels {
+    margin-top: 20px;
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
 }
 
-/* Extra small mobile devices */
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1.75rem;
-    }
-
-    h2 {
-        font-size: 1.2rem;
-    }
-
-    .about-section p,
-    .how-to-list li,
-    .tips-list li {
-        font-size: 14px;
-    }
-
-    .level-description p,
-    .level-subtitle {
-        font-size: 14px !important;
-    }
+.about-level {
+    display: flex;
+    gap: 16px;
+    padding: 20px 22px;
+    border-top: 1px solid var(--line-soft);
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
+.about-level:first-child {
+    border-top: none;
+}
 
-    .about-section p,
-    .how-to-list li,
-    .tips-list li {
-        color: #D6D3D1;
-    }
+.about-level-cefr {
+    flex-shrink: 0;
+    width: 36px;
+    height: 28px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+    background: #F0E7D6;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3px;
+}
 
-    .cefr-intro {
-        color: #A8A29E;
-    }
+.about-level h3 {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
 
-    .level-description h3 {
-        color: #FAFAF9;
-    }
+.about-level p {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0;
+}
 
-    .level-subtitle {
-        color: #A8A29E;
-    }
+/* Tips */
+.tips {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 
-    .level-description p {
-        color: #D6D3D1;
-    }
+.tips li {
+    position: relative;
+    padding-left: 22px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
 
-    .level-description strong {
-        color: #FAFAF9;
-    }
+.tips li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.1;
+}
 
-    .how-to-list li::marker,
-    .tips-list li::marker {
-        color: #FCD34D;
+/* Closing CTA */
+.about-cta {
+    margin-top: 48px;
+    padding-top: 34px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 620px) {
+    .about-level {
+        padding: 16px 18px;
     }
 }

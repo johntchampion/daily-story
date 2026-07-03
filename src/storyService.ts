@@ -5,8 +5,13 @@ import { A1_THEMES, A2_THEMES, B1_THEMES, B2_THEMES } from './themes.js'
 
 export type StoryContent = {
   title: string
+  // Optional English translation of the title, shown as a subtitle when present.
+  titleEn?: string
   story?: string
-  messages?: { text: string; sender: string }[]
+  // `translation` is an optional per-line English gloss. When messages carry
+  // translations, the story page offers a "Show English" toggle; when absent,
+  // the feature is hidden entirely.
+  messages?: { text: string; sender: string; translation?: string }[]
   questions: {
     question: string
     options: string[]

@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/icon.png" />
-    <title>Log In · Daily Story</title>
+    <title>Log in · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/auth.css">
 
@@ -18,36 +21,114 @@
         })
     </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Welcome Back</h1>
-        <p class="subtitle">Log in to continue your daily reading.</p>
+<body class="auth-body">
+    <div class="grain" aria-hidden="true"></div>
 
-        <form id="loginForm" action="/login" method="POST">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/">← Back to home</a>
+        </nav>
+    </header>
+
+    <!-- ============ TWO-COLUMN AUTH LAYOUT ============ -->
+    <main class="auth-layout">
+
+        <!-- LEFT — pitch + preview card -->
+        <div class="auth-pitch">
+            <p class="eyebrow">Welcome back</p>
+            <h1>Your story is waiting.</h1>
+            <p class="pitch-blurb">
+                Log in to pick up where you left off, keep your reading streak,
+                and get today's conversation at your level.
+            </p>
+
+            <ul class="perks">
+                <li><span class="perk-check" aria-hidden="true">✓</span><span class="perk-text">Your language and level, remembered</span></li>
+                <li><span class="perk-check" aria-hidden="true">✓</span><span class="perk-text">Reading streak and daily reminder</span></li>
+                <li><span class="perk-check" aria-hidden="true">✓</span><span class="perk-text">Every past story, one tap away</span></li>
+            </ul>
+
+            <div class="preview-card" aria-hidden="true">
+                <div class="preview-head">
+                    <span class="preview-title">Le petit déjeuner</span>
+                    <span class="preview-tag">Français · A2</span>
+                </div>
+                <div class="msg left">
+                    <div class="msg-inner">
+                        <div class="bubble">Tu veux un croissant ?</div>
+                    </div>
+                </div>
+                <div class="msg right">
+                    <div class="msg-inner">
+                        <div class="bubble">Oui, avec plaisir !</div>
+                    </div>
+                </div>
+                <div class="preview-foot">Your streak keeps a story like this waiting every morning.</div>
+            </div>
+        </div>
+
+        <!-- RIGHT — auth card -->
+        <div class="auth-side">
+            <div class="auth-card">
+
+                <!-- mode toggle (links between the two auth pages) -->
+                <div class="mode-tabs">
+                    <a href="/login" class="mode-tab is-active" aria-current="page">Log in</a>
+                    <a href="/signup" class="mode-tab">Sign up</a>
+                </div>
+
+                <h2 class="form-title">Log in</h2>
+                <p class="form-subtitle">Good to see you again.</p>
+
+                <% if (error) { %>
+                    <p class="form-error" role="alert"><%= error %></p>
+                <% } %>
+
+                <button type="button" class="btn-passkey" id="passkeyBtn">
+                    <span class="key-badge" aria-hidden="true">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 10-10m-5 5 3 3"/></svg>
+                    </span>
+                    Sign in with a passkey
+                </button>
+
+                <div class="divider">
+                    <span class="rule"></span>
+                    <span>or with email</span>
+                    <span class="rule"></span>
+                </div>
+
+                <form action="/login" method="POST">
+                    <label class="field">
+                        <span class="field-label">Email</span>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                    </label>
+
+                    <label class="field">
+                        <span class="field-label-row">
+                            <span class="field-label">Password</span>
+                            <a href="#" class="forgot-link">Forgot?</a>
+                        </span>
+                        <input type="password" id="password" name="password" placeholder="Your password" autocomplete="current-password" required>
+                    </label>
+
+                    <button type="submit" class="btn-start auth-submit">Log in →</button>
+                </form>
+
+                <p class="auth-switch">
+                    New to Daily Story? <a href="/signup">Create an account</a>
+                </p>
             </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-            </div>
-
-            <div class="form-row">
-                <label class="remember-me">
-                    <input type="checkbox" id="remember" name="remember">
-                    Remember me
-                </label>
-                <a href="/forgot-password" class="forgot-link">Forgot password?</a>
-            </div>
-
-            <button type="submit" class="submit-btn">Log In</button>
-        </form>
-
-        <p class="auth-switch">
-            Don't have an account? <a href="/signup">Sign up</a>
-        </p>
-    </div>
+            <p class="terms-note">
+                By continuing you agree to our <a href="#">Terms</a> and
+                <a href="#">Privacy Policy</a>. A fresh story is always free.
+            </p>
+        </div>
+    </main>
 </body>
 </html>

@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/icon.png" />
-    <title>About - Daily Story</title>
+    <title>About · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/about.css">
 
@@ -19,72 +22,143 @@
     </script>
 </head>
 <body>
-    <div class="container">
-        <h1>About Daily Story</h1>
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/" class="nav-strong">Read today's story</a>
+            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login">Log in</a>
+            <% } %>
+        </nav>
+    </header>
+
+    <!-- ============ ARTICLE ============ -->
+    <main class="column about-main">
+        <div class="title-block">
+            <p class="eyebrow">About</p>
+            <h1>A short story a day, at exactly your level.</h1>
+            <p class="about-lead">
+                Daily Story gives you one fresh conversation to read every
+                morning — written by Claude in the language you're learning,
+                with three quick questions to check you followed along.
+            </p>
+        </div>
 
         <section class="about-section">
-            <h2>What is Daily Story?</h2>
-            <p>Daily Story helps you practice reading in your target language with AI-generated content tailored to your skill level. Get a new story every day in 8 different languages!</p>
-        </section>
-
-        <section class="about-section">
-            <h2>How It Works</h2>
-            <ol class="how-to-list">
-                <li><strong>Choose your language</strong> - Select from English, Spanish, French, German, Italian, Portuguese, Chinese, or Japanese</li>
-                <li><strong>Pick your level</strong> - Select A1, A2, B1, or B2 based on your reading ability</li>
-                <li><strong>Read & quiz</strong> - Read today's story and test your comprehension with 3 questions</li>
-                <li><strong>Come back daily</strong> - Bookmark your level and return each day for fresh content</li>
+            <h2>How it works</h2>
+            <ol class="steps">
+                <li>
+                    <strong>Choose your language.</strong>
+                    English, Spanish, French, German, Italian, Portuguese,
+                    Chinese, or Japanese.
+                </li>
+                <li>
+                    <strong>Pick your level.</strong>
+                    Four levels from beginner to advanced, so the story meets
+                    you where you are.
+                </li>
+                <li>
+                    <strong>Read and check yourself.</strong>
+                    Read today's conversation, then answer three comprehension
+                    questions.
+                </li>
+                <li>
+                    <strong>Come back tomorrow.</strong>
+                    Bookmark your page — a new story lands every morning.
+                </li>
             </ol>
         </section>
 
         <section class="about-section">
-            <h2>Understanding CEFR Levels</h2>
-            <p class="cefr-intro">The Common European Framework of Reference (CEFR) is a standard for measuring language ability. Here's what each level means:</p>
+            <h2>Find your level</h2>
+            <p>
+                Levels follow the CEFR, the common standard for measuring
+                language ability. Here's what each one feels like:
+            </p>
 
-            <div class="level-description">
-                <h3>A1 - Beginner</h3>
-                <p class="level-subtitle">You can understand simple conversations with everyday phrases and basic vocabulary.</p>
-                <p><strong>Examples:</strong> Ordering food, asking directions, greeting friends</p>
-            </div>
-
-            <div class="level-description">
-                <h3>A2 - Elementary</h3>
-                <p class="level-subtitle">You can understand short conversations about familiar topics with common expressions.</p>
-                <p><strong>Examples:</strong> Making plans, talking about hobbies, simple descriptions</p>
-            </div>
-
-            <div class="level-description">
-                <h3>B1 - Intermediate</h3>
-                <p class="level-subtitle">You can understand conversations about everyday and moderately complex topics.</p>
-                <p><strong>Examples:</strong> Debates, discussions, professional emails, opinion exchanges</p>
-            </div>
-
-            <div class="level-description">
-                <h3>B2 - Upper Intermediate</h3>
-                <p class="level-subtitle">You can understand in-depth discussions on concrete and abstract topics with nuanced language.</p>
-                <p><strong>Examples:</strong> Work discussions, analytical debates, detailed explanations</p>
+            <div class="about-levels">
+                <div class="about-level">
+                    <span class="about-level-cefr">A1</span>
+                    <div>
+                        <h3>Beginner</h3>
+                        <p>Simple conversations with everyday phrases and basic vocabulary — ordering food, asking directions, greeting friends.</p>
+                    </div>
+                </div>
+                <div class="about-level">
+                    <span class="about-level-cefr">A2</span>
+                    <div>
+                        <h3>Conversational</h3>
+                        <p>Short exchanges about familiar topics — making plans, talking about hobbies, sharing simple opinions.</p>
+                    </div>
+                </div>
+                <div class="about-level">
+                    <span class="about-level-cefr">B1</span>
+                    <div>
+                        <h3>Intermediate</h3>
+                        <p>Everyday and moderately complex discussions — experiences, viewpoints, professional emails, comparing options.</p>
+                    </div>
+                </div>
+                <div class="about-level">
+                    <span class="about-level-cefr">B2</span>
+                    <div>
+                        <h3>Advanced</h3>
+                        <p>In-depth discussion of concrete and abstract topics — debates, analysis, and nuanced language.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section class="about-section">
-            <h2>Tips for Best Results</h2>
-            <ul class="tips-list">
-                <li>Start one level below where you think you are - it's better to build confidence</li>
-                <li>Don't worry about understanding every word - focus on getting the main idea</li>
-                <li>Use the quiz to check your comprehension, not just vocabulary</li>
-                <li>Read daily for consistent practice - even 5 minutes counts!</li>
+            <h2>Tips for best results</h2>
+            <ul class="tips">
+                <li>Start one level below where you think you are — building confidence beats struggling.</li>
+                <li>Don't worry about every word. Focus on getting the main idea.</li>
+                <li>Use the quiz to check comprehension, not just vocabulary.</li>
+                <li>Read daily. Even five minutes counts.</li>
             </ul>
         </section>
 
         <section class="about-section">
-            <h2>Open Source</h2>
-            <p>Daily Story is open source! Check out the code, contribute, or report issues on <a href="https://github.com/appdevjohn/daily-story" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+            <h2>Open source</h2>
+            <p>
+                Daily Story is open source. Check out the code, contribute, or
+                report issues on
+                <a class="text-link" href="https://github.com/appdevjohn/daily-story" target="_blank" rel="noopener noreferrer">GitHub</a>.
+            </p>
         </section>
 
-        <div class="cta-buttons">
-            <a href="/" class="btn btn-primary">Get Started</a>
-            <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+        <div class="about-cta">
+            <a href="/" class="btn-cta">Read today's story →</a>
         </div>
-    </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="brand">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </div>
+        <div class="footer-links">
+            <a href="/">Read today's story</a>
+            <a href="/">How it works</a>
+            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login">Log in</a>
+            <% } %>
+        </div>
+        <div>Stories written fresh each day by Claude.</div>
+    </footer>
 </body>
 </html>

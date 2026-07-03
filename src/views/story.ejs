@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/icon.png" />
-    <title><%= language %> (<%= level %>) - Daily Story</title>
+    <title><%= title %> — <%= language %> (<%= level %>) · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/story.css">
 
@@ -22,7 +25,7 @@
         let maxScrollPercentage = 0;
 
         function calculateStoryScrollPercentage() {
-            const storyContainer = document.querySelector('.container.story');
+            const storyContainer = document.querySelector('.conversation');
             if (!storyContainer) return 0;
 
             const storyTop = storyContainer.offsetTop;
@@ -39,15 +42,8 @@
             return Math.min(100, Math.max(0, percentage));
         }
 
-        function calculatePageScrollPercentage() {
-            const windowHeight = window.innerHeight;
-            const documentHeight = document.documentElement.scrollHeight;
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            return Math.round((scrollTop / (documentHeight - windowHeight)) * 100) || 0;
-        }
-
         function hasViewedQuiz() {
-            const quizSection = document.querySelector('.questions');
+            const quizSection = document.querySelector('#quiz');
             if (!quizSection) return false;
 
             const quizTop = quizSection.getBoundingClientRect().top + window.pageYOffset;
@@ -64,7 +60,7 @@
 
         window.addEventListener('scroll', updateMaxScroll);
 
-        function handlePageleave(event) {
+        function handlePageleave() {
             const lastScrollPercentage = calculateStoryScrollPercentage();
             const viewedQuiz = hasViewedQuiz();
 
@@ -81,9 +77,7 @@
                 quizCompletion = Math.round((answeredCount / totalQuestions) * 100);
 
                 if (answeredCount > 0) {
-                    // Count correct answers
-                    // If user selected wrong answer, there will be an 'incorrect' element
-                    // If user selected right answer, there will only be a 'correct' element (no 'incorrect')
+                    // A correct answer has no 'incorrect' <li>; a wrong one does.
                     let correctCount = 0;
                     answeredQuestions.forEach(optionsList => {
                         const hasIncorrect = optionsList.querySelector('li.incorrect');
@@ -107,81 +101,243 @@
     </script>
 </head>
 <body>
-    <div class="container story">
+    <%
+        // Native language names for the tag / levels header, e.g. "Deutsch".
+        const nativeNames = {
+            English: 'English', Spanish: 'Español', French: 'Français',
+            German: 'Deutsch', Italian: 'Italiano', Portuguese: 'Português',
+            Chinese: '中文', Japanese: '日本語'
+        };
+        // Plain-language name for each CEFR level (matches the welcome page).
+        const levelNames = {
+            A1: 'Beginner', A2: 'Conversational', B1: 'Intermediate', B2: 'Advanced'
+        };
+
+        const native = nativeNames[language] || language;
+        const levelName = levelNames[level] || '';
+        const storyTag = [native, level, levelName].filter(Boolean).join(' · ');
+
+        // Determine which sender sits on the left (first speaker) so a two-person
+        // dialogue alternates cleanly, mirroring the reference design.
+        const firstSender = (messages && messages.length > 0) ? messages[0].sender : null;
+
+        // Per-line English translations are optional. Only offer the "Show
+        // English" toggle when at least one line actually carries a translation.
+        const hasTranslations = (messages || []).some(m => m.translation && m.translation.trim());
+
+        // Build the "Today at other levels" list: merge the current level in with
+        // the others, then order A1 → B2. Only levels that actually have a story
+        // today appear (otherLevels already reflects what exists on disk).
+        const cefrOrder = ['A1', 'A2', 'B1', 'B2'];
+        const levelsByCefr = {};
+        (otherLevels || []).forEach(l => { levelsByCefr[l.level] = { ...l, current: false }; });
+        levelsByCefr[level] = {
+            level,
+            title,
+            url: '/' + language.toLowerCase() + '/' + level.toLowerCase(),
+            current: true
+        };
+        const orderedLevels = cefrOrder
+            .filter(c => levelsByCefr[c])
+            .map(c => ({ ...levelsByCefr[c], name: levelNames[c] || '' }));
+        const hasOtherLevels = (otherLevels && otherLevels.length > 0);
+    %>
+
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="site-header" id="top">
+        <a class="brand" href="/">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/">Change language</a>
+            <% if (hasOtherLevels) { %>
+                <a href="#levels">Other levels</a>
+            <% } %>
+            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login" class="nav-strong">Log in</a>
+            <% } %>
+        </nav>
+    </header>
+
+    <!-- ============ TITLE BLOCK ============ -->
+    <section class="title-block column">
+        <div class="date-line"><%= date %></div>
         <h1 class="story-title"><%= title %></h1>
-        <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
+        <% if (typeof titleEn !== 'undefined' && titleEn) { %>
+            <div class="story-subtitle"><%= titleEn %></div>
+        <% } %>
+        <div class="story-meta-row">
+            <span class="story-tag"><%= storyTag %></span>
+            <% if (messages && messages.length > 0) { %>
+                <span class="story-meta"><%= messages.length %> turns · about 5 min</span>
+            <% } %>
+            <% if (hasTranslations) { %>
+                <button type="button" class="toggle-en" id="toggleEn" aria-pressed="false">
+                    <span class="toggle-en-dot" aria-hidden="true"></span>
+                    <span class="toggle-en-label">Show English</span>
+                </button>
+            <% } %>
+        </div>
+    </section>
+
+    <!-- ============ CONVERSATION ============ -->
+    <section class="conversation column">
         <% if (messages && messages.length > 0) { %>
-            <% messages.forEach((message, index) => { %>
-                <div class="message">
-                    <div class="sender"><%= message.sender || 'Unknown' %></div>
-                    <div><%= message.text %></div>
+            <% messages.forEach(message => {
+                   const isLeft = message.sender === firstSender;
+                   const translation = message.translation && message.translation.trim(); %>
+                <div class="msg <%= isLeft ? 'left' : 'right' %>">
+                    <div class="msg-inner">
+                        <div class="msg-who"><%= message.sender || 'Unknown' %></div>
+                        <div class="bubble"><%= message.text %></div>
+                        <% if (translation) { %>
+                            <div class="msg-trans"><%= message.translation %></div>
+                        <% } %>
+                    </div>
                 </div>
             <% }) %>
         <% } else if (story) { %>
-            <p><%= story %></p>
+            <p class="story-prose"><%= story %></p>
         <% } %>
+    </section>
 
-        <% if (otherLevels && otherLevels.length > 0) { %>
-            <div class="other-levels">
-                <h3>Try Other Skill Levels</h3>
-                <ul class="level-links">
-                    <% otherLevels.forEach(level => { %>
-                        <li>
-                            <a href="<%= level.url %>">
-                                <span class="level-badge"><%= level.level %></span>
-                                <span class="level-title"><%= level.title %></span>
-                            </a>
-                        </li>
-                    <% }) %>
-                </ul>
-            </div>
-        <% } %>
+    <!-- End mark -->
+    <div class="end-mark" aria-hidden="true">
+        <span class="rule"></span>
+        <span class="word">· · ·</span>
+        <span class="rule"></span>
     </div>
 
+    <!-- ============ QUIZ ============ -->
     <% if (questions && questions.length > 0) { %>
-        <div class="questions">
-            <h2>Quiz Questions</h2>
-            <% questions.forEach((q, index) => { %>
-                <%
-                    // Create array of indices to shuffle
-                    const indices = q.options.map((_, i) => i);
-                    // Fisher-Yates shuffle
-                    for (let i = indices.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [indices[i], indices[j]] = [indices[j], indices[i]];
-                    }
-                    // Create shuffled options array
-                    const shuffledOptions = indices.map(i => q.options[i]);
-                    // Find new position of correct answer
-                    const newCorrectIndex = indices.indexOf(q.correctAnswer);
-                %>
-                <div class="question" data-question-index="<%= index %>">
-                    <h3><%= q.question %></h3>
-                    <ul class="options" data-correct-answer="<%= newCorrectIndex %>">
-                        <% shuffledOptions.forEach((option, optIndex) => { %>
-                            <li data-option-index="<%= optIndex %>" onclick="selectAnswer(this)">
-                                <strong><%= String.fromCharCode(65 + optIndex) %>.</strong> <%= option %>
-                            </li>
-                        <% }) %>
-                    </ul>
+        <section id="quiz" class="quiz-section">
+            <div class="quiz-inner">
+                <div class="quiz-head">
+                    <h2>Comprehension</h2>
+                    <span class="quiz-progress"><span id="answeredCount">0</span> / <%= questions.length %> answered</span>
                 </div>
-            <% }) %>
-        </div>
+
+                <div class="questions">
+                    <% questions.forEach((q, index) => { %>
+                        <%
+                            // Shuffle option order so the correct answer isn't always
+                            // in the same slot, then track where it landed.
+                            const indices = q.options.map((_, i) => i);
+                            for (let i = indices.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [indices[i], indices[j]] = [indices[j], indices[i]];
+                            }
+                            const shuffledOptions = indices.map(i => q.options[i]);
+                            const newCorrectIndex = indices.indexOf(q.correctAnswer);
+                        %>
+                        <div class="question" data-question-index="<%= index %>">
+                            <div class="question-head">
+                                <span class="question-num"><%= index + 1 %>.</span>
+                                <span class="question-prompt"><%= q.question %></span>
+                            </div>
+                            <ul class="options" data-correct-answer="<%= newCorrectIndex %>">
+                                <% shuffledOptions.forEach((option, optIndex) => { %>
+                                    <li data-option-index="<%= optIndex %>" onclick="selectAnswer(this)">
+                                        <span class="opt-letter"><%= String.fromCharCode(65 + optIndex) %></span>
+                                        <span class="opt-text"><%= option %></span>
+                                        <span class="opt-mark"></span>
+                                    </li>
+                                <% }) %>
+                            </ul>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <div class="quiz-score" id="quizScore" hidden>
+                    <div class="quiz-score-title" id="quizScoreTitle"></div>
+                    <div class="quiz-score-msg" id="quizScoreMsg"></div>
+                </div>
+            </div>
+        </section>
     <% } %>
 
-    <p class="bookmark-message">Bookmark this page and come back tomorrow for a new story!</p>
-    <div class="home-link-container">
-        <a href="/" class="home-link">Select Language & Skill Level</a>
-        <span class="link-separator">•</span>
-        <a href="/about" class="home-link">About</a>
+    <!-- ============ OTHER LEVELS ============ -->
+    <% if (hasOtherLevels) { %>
+        <section id="levels" class="other-levels">
+            <div class="other-levels-head">
+                <span class="other-levels-label">Today at other levels</span>
+                <span class="other-levels-lang"><%= native %></span>
+            </div>
+            <div class="level-list">
+                <% orderedLevels.forEach(lc => { %>
+                    <a class="level-row <%= lc.current ? 'is-current' : '' %>"
+                       href="<%= lc.url %>"<%= lc.current ? ' aria-current="page"' : '' %>>
+                        <span class="level-cefr"><%= lc.level %></span>
+                        <span class="level-main">
+                            <span class="level-name"><%= lc.name %></span>
+                            <span class="level-title"><%= lc.title %></span>
+                        </span>
+                        <span class="level-action"><%= lc.current ? 'Reading now' : 'Open' %></span>
+                    </a>
+                <% }) %>
+            </div>
+        </section>
+    <% } %>
+
+    <!-- Bookmark footnote -->
+    <div class="bookmark">
+        <p>A new story lands every morning. <strong>Bookmark this page</strong> and come back tomorrow.</p>
     </div>
 
+    <footer class="site-footer">
+        <div class="brand">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </div>
+        <div class="footer-links">
+            <a href="/">Select language &amp; level</a>
+            <a href="/about">About</a>
+            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            <% } else { %>
+                <a href="/login">Log in</a>
+            <% } %>
+        </div>
+        <div>Stories written fresh each day by Claude.</div>
+    </footer>
+
     <script>
+        // ---- Show English toggle ----------------------------------------
+        (function () {
+            const btn = document.getElementById('toggleEn');
+            const conversation = document.querySelector('.conversation');
+            if (!btn || !conversation) return;
+            const label = btn.querySelector('.toggle-en-label');
+            btn.addEventListener('click', function () {
+                const on = conversation.classList.toggle('show-en');
+                btn.classList.toggle('is-on', on);
+                btn.setAttribute('aria-pressed', String(on));
+                if (label) label.textContent = on ? 'English on' : 'Show English';
+            });
+        })();
+
+        // ---- Quiz -------------------------------------------------------
+        const SCORE_MESSAGES = {
+            perfect: 'Perfect — you followed every turn. Come back tomorrow for a new story.',
+            most: 'Nicely done. Re-read the lines you missed, then try tomorrow’s story.',
+            some: 'A good start. Read it once more — it clicks fast.',
+            none: 'This one was tricky. Read it again, or drop to an easier level below.'
+        };
+
         function selectAnswer(element) {
             const optionsList = element.parentElement;
             const allOptions = optionsList.querySelectorAll('li');
 
-            // Check if this question has already been answered
+            // Ignore clicks once this question has been answered.
             if (optionsList.classList.contains('answered')) {
                 return;
             }
@@ -189,38 +345,55 @@
             const selectedIndex = parseInt(element.getAttribute('data-option-index'));
             const correctIndex = parseInt(optionsList.getAttribute('data-correct-answer'));
 
-            // Mark as answered to prevent further clicks
             optionsList.classList.add('answered');
 
-            // Disable all options
-            allOptions.forEach(option => {
-                option.classList.add('disabled');
-            });
-
-            // Highlight the selected answer
+            // Highlight the selected answer (and reveal the correct one if wrong).
             if (selectedIndex === correctIndex) {
                 element.classList.add('correct');
             } else {
                 element.classList.add('incorrect');
-                // Also show the correct answer
                 allOptions[correctIndex].classList.add('correct');
             }
 
-            // Check for perfect score after each answer
-            const totalQuestions = document.querySelectorAll('.options').length;
-            const answeredQuestions = document.querySelectorAll('.options.answered');
-            if (answeredQuestions.length === totalQuestions) {
-                const anyIncorrect = document.querySelectorAll('.options.answered li.incorrect').length > 0;
-                if (!anyIncorrect) {
-                    triggerPerfectScore();
-                }
+            updateQuizProgress();
+        }
+
+        function updateQuizProgress() {
+            const total = document.querySelectorAll('.options').length;
+            const answered = document.querySelectorAll('.options.answered');
+            const counter = document.getElementById('answeredCount');
+            if (counter) counter.textContent = answered.length;
+
+            if (answered.length !== total || total === 0) return;
+
+            // All answered — tally correct responses (a wrong pick leaves an
+            // '.incorrect' <li>; a right one does not).
+            let correct = 0;
+            answered.forEach(list => {
+                if (!list.querySelector('li.incorrect')) correct++;
+            });
+
+            const scoreBox = document.getElementById('quizScore');
+            const title = document.getElementById('quizScoreTitle');
+            const msg = document.getElementById('quizScoreMsg');
+            if (scoreBox && title && msg) {
+                title.textContent = correct + ' of ' + total + ' right';
+                const ratio = correct / total;
+                msg.textContent = correct === total ? SCORE_MESSAGES.perfect
+                    : ratio >= 0.6 ? SCORE_MESSAGES.most
+                    : correct >= 1 ? SCORE_MESSAGES.some
+                    : SCORE_MESSAGES.none;
+                scoreBox.hidden = false;
             }
+
+            if (correct === total) triggerPerfectScore();
         }
 
         function triggerPerfectScore() {
             const emojis = ['⭐', '🌟', '✨', '⭐', '🌟', '✨', '⭐'];
             const lastCorrect = document.querySelectorAll('.options li.correct');
             const anchor = lastCorrect[lastCorrect.length - 1];
+            if (!anchor) return;
             const rect = anchor.getBoundingClientRect();
 
             emojis.forEach((emoji, i) => {

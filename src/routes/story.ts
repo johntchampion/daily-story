@@ -86,6 +86,7 @@ router.get(
             day: 'numeric',
           }),
           dateISO: now.toISOString().split('T')[0],
+          isLoggedIn: Boolean(req.session.userId),
         })
         return
       }
@@ -128,6 +129,7 @@ router.get(
 
       res.render('story', {
         title: content.title,
+        titleEn: content.titleEn,
         story: content.story,
         messages: content.messages,
         questions: content.questions,
@@ -143,6 +145,7 @@ router.get(
         }),
         dateISO: now.toISOString().split('T')[0],
         otherLevels,
+        isLoggedIn: Boolean(req.session.userId),
       })
     } catch (error) {
       next(error)

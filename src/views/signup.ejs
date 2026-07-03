@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="apple-touch-icon" href="/images/icon.png" />
-    <title>Sign Up · Daily Story</title>
+    <title>Sign up · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/auth.css">
 
@@ -18,38 +21,108 @@
         })
     </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Create Account</h1>
-        <p class="subtitle">Sign up to start reading a story every day.</p>
+<body class="auth-body">
+    <div class="grain" aria-hidden="true"></div>
 
-        <form id="signupForm" action="/signup" method="POST">
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" id="name" name="name" placeholder="Your name" autocomplete="name" required>
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-dot"></span>
+            <span class="brand-name">Daily Story</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/">← Back to home</a>
+        </nav>
+    </header>
+
+    <!-- ============ TWO-COLUMN AUTH LAYOUT ============ -->
+    <main class="auth-layout">
+
+        <!-- LEFT — pitch + preview card -->
+        <div class="auth-pitch">
+            <p class="eyebrow">Start reading today</p>
+            <h1>Keep the streak going.</h1>
+            <p class="pitch-blurb">
+                Create a free account to save your language and level, track
+                your streak, and get a fresh story every morning.
+            </p>
+
+            <ul class="perks">
+                <li><span class="perk-check" aria-hidden="true">✓</span><span class="perk-text">Free forever — a new story every day</span></li>
+                <li><span class="perk-check" aria-hidden="true">✓</span><span class="perk-text">Save your language, level, and streak</span></li>
+                <li><span class="perk-check" aria-hidden="true">✓</span><span class="perk-text">One quick sign-up, no card needed</span></li>
+            </ul>
+
+            <div class="preview-card" aria-hidden="true">
+                <div class="preview-head">
+                    <span class="preview-title">Le petit déjeuner</span>
+                    <span class="preview-tag">Français · A2</span>
+                </div>
+                <div class="msg left">
+                    <div class="msg-inner">
+                        <div class="bubble">Tu veux un croissant ?</div>
+                    </div>
+                </div>
+                <div class="msg right">
+                    <div class="msg-inner">
+                        <div class="bubble">Oui, avec plaisir !</div>
+                    </div>
+                </div>
+                <div class="preview-foot">Your streak keeps a story like this waiting every morning.</div>
+            </div>
+        </div>
+
+        <!-- RIGHT — auth card -->
+        <div class="auth-side">
+            <div class="auth-card">
+
+                <!-- mode toggle (links between the two auth pages) -->
+                <div class="mode-tabs">
+                    <a href="/login" class="mode-tab">Log in</a>
+                    <a href="/signup" class="mode-tab is-active" aria-current="page">Sign up</a>
+                </div>
+
+                <h2 class="form-title">Create your account</h2>
+                <p class="form-subtitle">Takes less than a minute.</p>
+
+                <% if (error) { %>
+                    <p class="form-error" role="alert"><%= error %></p>
+                <% } %>
+
+                <form action="/signup" method="POST">
+                    <label class="field">
+                        <span class="field-label">Name</span>
+                        <input type="text" id="name" name="name" placeholder="What should we call you?" autocomplete="name">
+                    </label>
+
+                    <label class="field">
+                        <span class="field-label">Email</span>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                    </label>
+
+                    <label class="field">
+                        <span class="field-label">Password</span>
+                        <input type="password" id="password" name="password" placeholder="Choose a password" autocomplete="new-password" required>
+                    </label>
+
+                    <label class="nudge">
+                        <input type="checkbox" id="nudge" name="nudge" checked>
+                        <span>Send me a daily nudge when my story is ready, and keep my streak going.</span>
+                    </label>
+
+                    <button type="submit" class="btn-start auth-submit">Create account →</button>
+                </form>
+
+                <p class="auth-switch">
+                    Already have an account? <a href="/login">Log in</a>
+                </p>
             </div>
 
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Create a password" autocomplete="new-password" required>
-            </div>
-
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" autocomplete="new-password" required>
-            </div>
-
-            <button type="submit" class="submit-btn">Sign Up</button>
-        </form>
-
-        <p class="auth-switch">
-            Already have an account? <a href="/login">Log in</a>
-        </p>
-    </div>
+            <p class="terms-note">
+                By continuing you agree to our <a href="#">Terms</a> and
+                <a href="#">Privacy Policy</a>. A fresh story is always free.
+            </p>
+        </div>
+    </main>
 </body>
 </html>

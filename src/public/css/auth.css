@@ -1,235 +1,404 @@
-/* Page-specific container size */
-.container {
-    max-width: 460px;
-    margin-top: 4rem;
+/* Login + signup pages — two columns: pitch + story preview on the left, the
+   auth card on the right, with tab links between the two pages. Shared by
+   login.ejs and signup.ejs. Loads after index.css, which owns the shared
+   foundation (palette, header, bubbles, buttons). */
+
+.auth-body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Page-specific heading adjustments */
-h1 {
-    margin-bottom: 10px;
-    font-size: 2.5rem;
-}
-
-.subtitle {
-    text-align: center;
-    color: #78716C;
-    margin-bottom: 30px;
-    font-size: 16px;
-    line-height: 1.6;
-    font-weight: 400;
-}
-
-.form-group {
-    margin-bottom: 22px;
-}
-
-label {
-    display: block;
-    margin-bottom: 10px;
-    color: #44403C;
-    font-weight: 600;
-    font-size: 15px;
-    font-family: 'Lora', Georgia, serif;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+.site-header {
     width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #E7E5E4;
-    border-radius: 10px;
-    font-size: 16px;
-    font-family: 'Inter', sans-serif;
-    background-color: #FAFAF9;
-    color: #292524;
-    box-sizing: border-box;
-    transition: all 0.3s ease;
 }
 
-input::placeholder {
-    color: #A8A29E;
-}
-
-input[type="text"]:hover,
-input[type="email"]:hover,
-input[type="password"]:hover {
-    border-color: #F59E0B;
-    background-color: white;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus {
-    outline: none;
-    border-color: #D97706;
-    background-color: white;
-    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1);
-}
-
-.form-row {
-    display: flex;
+.auth-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 26px 36px 60px;
     align-items: center;
+}
+
+/* ---- Left: pitch ------------------------------------------------------------ */
+
+.auth-pitch .eyebrow {
+    margin-bottom: 20px !important;
+}
+
+.auth-pitch h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(32px, 3.6vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0 0 18px;
+    max-width: 13ch;
+}
+
+.pitch-blurb {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 30px;
+    max-width: 40ch;
+}
+
+.perks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.perks li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.perk-check {
+    flex-shrink: 0;
+    margin-top: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.perk-text {
+    font-size: 15.5px;
+    line-height: 1.5;
+    color: #4A4234;
+}
+
+/* Mini story preview */
+.preview-card {
+    margin-top: 34px;
+    padding: 18px 20px;
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px -30px rgba(60, 44, 20, 0.45);
+    max-width: 390px;
+}
+
+.preview-head {
+    display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 22px;
-    font-size: 14px;
+    margin-bottom: 12px;
 }
 
-.remember-me {
+.preview-title {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.preview-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+}
+
+.preview-card .msg {
+    margin-bottom: 9px;
+}
+
+.preview-card .msg:last-of-type {
+    margin-bottom: 0;
+}
+
+.preview-card .msg-inner {
+    max-width: 82%;
+}
+
+.preview-card .bubble {
+    font-size: 16px;
+    line-height: 1.45;
+    padding: 9px 13px;
+    border-radius: 4px 14px 14px 14px;
+}
+
+.preview-card .msg.right .bubble {
+    border-radius: 14px 4px 14px 14px;
+}
+
+.preview-foot {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+    font-size: 12.5px;
+    color: var(--ink-muted);
+}
+
+/* ---- Right: auth card --------------------------------------------------------- */
+
+.auth-side {
+    justify-self: stretch;
+    max-width: 440px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.auth-card {
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 32px 34px 30px;
+    box-shadow: 0 30px 70px -38px rgba(60, 44, 20, 0.5);
+}
+
+/* Mode toggle — links between /login and /signup styled as segmented tabs */
+.mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #F0E7D6;
+    border-radius: 13px;
+    margin-bottom: 26px;
+}
+
+.mode-tab {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: #57534E;
-    font-weight: 400;
-    margin-bottom: 0;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
+    justify-content: center;
+    background: transparent;
+    color: var(--ink-muted);
+    border-radius: 10px;
+    padding: 11px 0;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.15s ease;
 }
 
-.remember-me input {
-    width: auto;
-    accent-color: #D97706;
+.mode-tab:hover:not(.is-active) {
+    color: var(--ink-soft);
+}
+
+.mode-tab.is-active {
+    background: var(--paper-card);
+    color: var(--ink);
+    box-shadow: 0 2px 6px -2px rgba(60, 44, 20, 0.35);
+}
+
+.form-title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 27px;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+}
+
+.form-subtitle {
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    margin: 0 0 24px;
+}
+
+/* Passkey sign-in (login page only) */
+.btn-passkey {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--paper-card-alt);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 0;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 600;
+    color: #3A342A;
     cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.btn-passkey:hover {
+    border-color: var(--accent-line);
+}
+
+.key-badge {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 20px 0;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: #A99C86;
+}
+
+.divider .rule {
+    flex: 1;
+    height: 1px;
+    background: #EADFCB;
+}
+
+/* Fields */
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.field-label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 7px;
+}
+
+.field-label-row .field-label {
+    margin-bottom: 0;
 }
 
 .forgot-link {
-    font-size: 14px;
+    font-size: 12.5px;
+    color: var(--accent);
 }
 
-.submit-btn {
+.auth-card input[type='text'],
+.auth-card input[type='email'],
+.auth-card input[type='password'] {
     width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 700;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
-    letter-spacing: 0.01em;
-}
-
-.submit-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(217, 119, 6, 0.4);
-    background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
-}
-
-.submit-btn:active {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
-}
-
-/* Divider between form and switch link */
-.auth-switch {
-    text-align: center;
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid #E7E5E4;
-    color: #78716C;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 13px 14px;
+    font-family: var(--font-sans);
     font-size: 15px;
+    color: var(--ink);
 }
 
-/* Mobile responsive styles */
-@media (max-width: 768px) {
-    .container {
-        padding: 25px;
-        margin-top: 2rem;
+.auth-card input::placeholder {
+    color: var(--ink-faint);
+}
+
+.auth-card input:focus-visible {
+    outline: 2px solid var(--accent-line);
+    outline-offset: 1px;
+}
+
+.nudge {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6F6553;
+}
+
+.nudge input {
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.auth-submit {
+    margin-top: 4px;
+    width: 100%;
+    font-size: 16px;
+    padding: 14px 0;
+}
+
+.form-error {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    background: var(--bad-soft);
+    border-radius: 11px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--bad-ink);
+}
+
+.auth-switch {
+    margin: 22px 0 0;
+    text-align: center;
+    font-size: 14px;
+    color: var(--ink-muted);
+}
+
+.auth-switch a {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.terms-note {
+    margin: 18px auto 0;
+    max-width: 360px;
+    text-align: center;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #A99C86;
+}
+
+.terms-note a {
+    color: var(--ink-muted);
+}
+
+/* ---- Responsive ---------------------------------------------------------------- */
+
+@media (max-width: 880px) {
+    .auth-layout {
+        grid-template-columns: 1fr;
+        gap: 44px;
+        padding-top: 10px;
+        align-items: start;
     }
 
-    h1 {
-        font-size: 2.2rem;
-        margin-bottom: 8px;
+    /* The form is the task — put it before the pitch on small screens */
+    .auth-side {
+        order: -1;
     }
 
-    .subtitle {
-        font-size: 14px;
-        margin-bottom: 25px;
-    }
-
-    .form-group {
-        margin-bottom: 18px;
-    }
-
-    label {
-        font-size: 13px;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="password"] {
-        padding: 12px 14px;
-        font-size: 15px;
-    }
-
-    .submit-btn {
-        padding: 14px;
-        font-size: 16px;
+    .auth-pitch {
+        max-width: 440px;
+        margin: 0 auto;
+        width: 100%;
     }
 }
 
-/* Extra small mobile devices */
-@media (max-width: 480px) {
-    .container {
-        padding: 20px;
-        margin-top: 1.5rem;
+@media (max-width: 620px) {
+    .auth-layout {
+        padding-left: 22px;
+        padding-right: 22px;
     }
 
-    h1 {
-        font-size: 2rem;
-    }
-
-    .subtitle {
-        font-size: 13px;
-    }
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-    .subtitle {
-        color: #A8A29E;
-    }
-
-    label {
-        color: #E7E5E4;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="password"] {
-        background-color: #44403C;
-        color: #FAFAF9;
-        border-color: #57534E;
-    }
-
-    input::placeholder {
-        color: #78716C;
-    }
-
-    input[type="text"]:hover,
-    input[type="email"]:hover,
-    input[type="password"]:hover {
-        border-color: #FCD34D;
-        background-color: #57534E;
-    }
-
-    input[type="text"]:focus,
-    input[type="email"]:focus,
-    input[type="password"]:focus {
-        border-color: #FBBF24;
-        background-color: #57534E;
-        box-shadow: 0 0 0 4px rgba(252, 211, 77, 0.15);
-    }
-
-    .remember-me {
-        color: #D6D3D1;
-    }
-
-    .auth-switch {
-        color: #A8A29E;
-        border-top-color: #57534E;
+    .auth-card {
+        padding: 26px 22px 24px;
     }
 }

@@ -1,134 +1,52 @@
-body {
+/* Error page. Loads after index.css, which owns the shared foundation
+   (palette, header/footer, buttons). */
+
+.error-main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 60px 22px 90px;
     text-align: center;
 }
 
-h1 {
-    font-size: 2.5rem;
-}
-
-.error-container {
-    background-color: #FEF2F2;
-    border: 2px solid #FECACA;
-    border-radius: 16px;
-    padding: 50px;
-    margin-top: 50px;
-    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.1);
-}
-
 .error-code {
-    font-size: 80px;
-    font-weight: 900;
-    font-family: 'Playfair Display', Georgia, serif;
-    color: #DC2626;
-    margin: 0;
-    letter-spacing: -0.02em;
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(90px, 16vw, 140px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--accent);
 }
 
 .error-message {
-    font-size: 26px;
-    font-family: 'Lora', Georgia, serif;
-    font-weight: 600;
-    color: #991B1B;
-    margin: 20px 0;
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(24px, 4vw, 32px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 14px 0 30px;
 }
 
 .error-details {
-    font-size: 16px;
-    font-family: 'Inter', sans-serif;
-    color: #92400E;
-    background-color: #FEF3C7;
-    border: 2px solid #FDE68A;
-    border-radius: 10px;
-    padding: 18px;
-    margin-top: 24px;
-    margin-bottom: 1.2rem;
+    margin: 0 0 30px;
+    padding: 16px 18px;
+    background: var(--bad-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: 14px;
     text-align: left;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--bad-ink);
 }
 
-/* Mobile responsive styles */
-@media (max-width: 768px) {
-    h1 {
-        font-size: 2rem;
-    }
-
-    .error-container {
-        background-color: transparent;
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 25px;
-        margin-top: 30px;
-    }
-
-    .error-code {
-        font-size: 56px;
-    }
-
-    .error-message {
-        font-size: 20px;
-        margin: 15px 0;
-    }
-
-    .error-details {
-        font-size: 14px;
-        padding: 12px;
-        margin-bottom: 1.2rem;
-    }
+.error-details strong {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
 }
 
-/* Extra small mobile devices */
-@media (max-width: 480px) {
-    h1 {
-        font-size: 2rem;
-    }
-
-    .error-container {
-        padding: 20px;
-        margin-top: 20px;
-    }
-
-    .error-code {
-        font-size: 48px;
-    }
-
-    .error-message {
-        font-size: 18px;
-    }
-
-    .error-details {
-        font-size: 13px;
-        margin-bottom: 1.2rem;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .error-container {
-        background-color: #450A0A;
-        border-color: #991B1B;
-    }
-
-    .error-code {
-        color: #FCA5A5;
-    }
-
-    .error-message {
-        color: #FEE2E2;
-    }
-
-    .error-details {
-        background-color: #451A03;
-        border-color: #78350F;
-        color: #FDE68A;
-    }
-}
-
-/* Dark mode: keep error container transparent on mobile */
-@media (max-width: 768px) and (prefers-color-scheme: dark) {
-    .error-container {
-        background-color: transparent;
-        box-shadow: none;
-        border: none;
-    }
+.error-details p {
+    margin: 0;
 }
