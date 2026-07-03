@@ -55,7 +55,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #B7A98F;
+    color: var(--ink-faint);
 }
 
 .end-mark span.rule {
@@ -68,5 +68,5 @@
     font-family: var(--font-serif);
     font-style: italic;
     font-size: 15px;
-    color: #A0937C;
+    color: var(--ink-faint);
 }

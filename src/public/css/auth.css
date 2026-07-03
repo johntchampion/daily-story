@@ -82,7 +82,7 @@
 .perk-text {
     font-size: 15.5px;
     line-height: 1.5;
-    color: #4A4234;
+    color: var(--ink-soft);
 }
 
 /* Mini story preview */
@@ -92,7 +92,7 @@
     background: var(--paper-card);
     border: 1px solid var(--line);
     border-radius: 16px;
-    box-shadow: 0 18px 40px -30px rgba(60, 44, 20, 0.45);
+    box-shadow: 0 18px 40px -30px rgba(var(--shadow-rgb), 0.45);
     max-width: 390px;
 }
 
@@ -161,7 +161,7 @@
     border: 1px solid var(--line);
     border-radius: 22px;
     padding: 32px 34px 30px;
-    box-shadow: 0 30px 70px -38px rgba(60, 44, 20, 0.5);
+    box-shadow: 0 30px 70px -38px rgba(var(--shadow-rgb), 0.5);
 }
 
 /* Mode toggle — links between /login and /signup styled as segmented tabs */
@@ -169,7 +169,7 @@
     display: flex;
     gap: 4px;
     padding: 4px;
-    background: #F0E7D6;
+    background: var(--chip-bg);
     border-radius: 13px;
     margin-bottom: 26px;
 }
@@ -195,7 +195,7 @@
 .mode-tab.is-active {
     background: var(--paper-card);
     color: var(--ink);
-    box-shadow: 0 2px 6px -2px rgba(60, 44, 20, 0.35);
+    box-shadow: 0 2px 6px -2px rgba(var(--shadow-rgb), 0.35);
 }
 
 .form-title {
@@ -227,7 +227,7 @@
     font-family: var(--font-sans);
     font-size: 15px;
     font-weight: 600;
-    color: #3A342A;
+    color: var(--ink);
     cursor: pointer;
     transition: border-color 0.15s ease;
 }
@@ -255,13 +255,13 @@
     margin: 20px 0;
     font-size: 12px;
     letter-spacing: 0.04em;
-    color: #A99C86;
+    color: var(--ink-faint);
 }
 
 .divider .rule {
     flex: 1;
     height: 1px;
-    background: #EADFCB;
+    background: var(--line);
 }
 
 /* Fields */
@@ -316,7 +316,7 @@
     cursor: pointer;
     font-size: 13px;
     line-height: 1.5;
-    color: #6F6553;
+    color: var(--ink-soft);
 }
 
 .nudge input {
@@ -363,7 +363,7 @@
     text-align: center;
     font-size: 12.5px;
     line-height: 1.55;
-    color: #A99C86;
+    color: var(--ink-faint);
 }
 
 .terms-note a {

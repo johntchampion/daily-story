@@ -2,7 +2,9 @@
    terracotta accent, extracted from the welcome + story page designs. Load this
    first on every page, then the page's own stylesheet for its specific layout.
 
-   The palette is fixed (no OS dark-mode variant) so the mood stays consistent. */
+   Two palettes share one set of tokens: warm paper by day, warm "lamplight"
+   char-brown by night (via prefers-color-scheme). Every color in the site must
+   come from a token here so both modes stay coherent. */
 
 @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -21,11 +23,14 @@
 
     --line: #E4D9C5;
     --line-soft: #F0E7D6;
+    --line-strong: #D8C9B2;
+    --card-line: #E9DFCC;
 
     --accent: #C14A2B;
     --accent-hover: #A73C21;
     --accent-soft: #EED5C6;
     --accent-line: #DC9D87;
+    --on-accent: #FFFFFF;
 
     --good: #2F7D57;
     --good-soft: #E4EFE6;
@@ -34,11 +39,65 @@
     --bad-soft: #F4E2DB;
     --bad-ink: #8A3320;
 
+    --selection: #EBD9C8;
+    --chip-bg: #F0E7D6;
+    --chip-veil: rgba(255, 255, 255, 0.5);
+    --btn-disabled-bg: #E2D7C3;
+    --btn-disabled-ink: #A99C86;
+    --closing-bg: #241E16;
+    --closing-ink: #F6EFE3;
+    --closing-note: #A79C88;
+    --shadow-rgb: 60, 44, 20;
+
     --font-serif: 'Newsreader', Georgia, serif;
     --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
 
     --shell: 1140px;
     --column: 680px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #1B1611;
+        --paper-card: #241E17;
+        --paper-card-alt: #262019;
+        --paper-panel: #151109;
+        --paper-raise: #2C251C;
+        --paper-quiz: #201A13;
+
+        --ink: #EFE7D7;
+        --ink-soft: #C9BCA6;
+        --ink-muted: #9C8F79;
+        --ink-faint: #877B66;
+
+        --line: #3B3327;
+        --line-soft: #322B21;
+        --line-strong: #4C4232;
+        --card-line: #3B3327;
+
+        --accent: #E0714E;
+        --accent-hover: #E98663;
+        --accent-soft: #442418;
+        --accent-line: #86452C;
+        --on-accent: #FFF6EC;
+
+        --good: #4E9E76;
+        --good-soft: #1C2C22;
+        --good-ink: #A4D3BA;
+        --bad: #CF6144;
+        --bad-soft: #3A2118;
+        --bad-ink: #E8A992;
+
+        --selection: #503C2B;
+        --chip-bg: #322B21;
+        --chip-veil: rgba(255, 255, 255, 0.05);
+        --btn-disabled-bg: #2E271E;
+        --btn-disabled-ink: #6E6350;
+        --closing-bg: #120E0A;
+        --closing-ink: #EFE7D7;
+        --closing-note: #877B66;
+        --shadow-rgb: 0, 0, 0;
+    }
 }
 
 /* ---- Reset / base --------------------------------------------------------- */
@@ -51,6 +110,12 @@
 
 html {
     color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    html {
+        color-scheme: dark;
+    }
 }
 
 html,
@@ -69,7 +134,7 @@ body {
 }
 
 ::selection {
-    background: #EBD9C8;
+    background: var(--selection);
 }
 
 a {
@@ -272,7 +337,7 @@ svg {
 
 .bubble {
     background: var(--paper-card-alt);
-    border: 1px solid #E6DAC6;
+    border: 1px solid var(--card-line);
     border-radius: 4px 16px 16px 16px;
     padding: 12px 16px;
     font-family: var(--font-serif);
@@ -308,8 +373,8 @@ svg {
     width: 24px;
     height: 24px;
     border-radius: 7px;
-    background: #F0E7D6;
-    color: #6A5F4E;
+    background: var(--chip-bg);
+    color: var(--ink-soft);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -334,7 +399,7 @@ svg {
     border: 1px solid var(--line);
     border-radius: 18px;
     padding: 22px;
-    box-shadow: 0 18px 40px -28px rgba(60, 44, 20, 0.4);
+    box-shadow: 0 18px 40px -28px rgba(var(--shadow-rgb), 0.4);
 }
 
 .picker-grid {
@@ -408,7 +473,7 @@ svg {
 
 .btn-start {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border: none;
     border-radius: 12px;
     padding: 13px 24px;
@@ -425,8 +490,8 @@ svg {
 }
 
 .btn-start[aria-disabled='true'] {
-    background: #E2D7C3;
-    color: #A99C86;
+    background: var(--btn-disabled-bg);
+    color: var(--btn-disabled-ink);
     cursor: not-allowed;
 }
 
@@ -449,7 +514,7 @@ svg {
 .btn-cta {
     display: inline-block;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border-radius: 13px;
     padding: 15px 30px;
     font-family: var(--font-sans);

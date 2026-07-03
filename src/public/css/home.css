@@ -49,8 +49,8 @@
 
 .chips li {
     font-size: 13px;
-    color: #6F6553;
-    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink-soft);
+    background: var(--chip-veil);
     border: 1px solid var(--line);
     border-radius: 20px;
     padding: 6px 13px;
@@ -77,7 +77,7 @@
     border-radius: 20px;
     padding: 26px 26px 22px;
     transform: rotate(-1.4deg);
-    box-shadow: 0 30px 60px -34px rgba(60, 44, 20, 0.5);
+    box-shadow: 0 30px 60px -34px rgba(var(--shadow-rgb), 0.5);
 }
 
 .hero-preview .card-head {
@@ -184,7 +184,7 @@
 .story-tab {
     background: transparent;
     color: var(--ink-soft);
-    border: 1px solid #D8C9B2;
+    border: 1px solid var(--line-strong);
     border-radius: 22px;
     padding: 9px 18px;
     font-family: var(--font-sans);
@@ -200,7 +200,7 @@
 
 .story-tab.is-active {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border-color: var(--accent);
 }
 
@@ -211,7 +211,7 @@
     border: 1px solid var(--line);
     border-radius: 22px;
     overflow: hidden;
-    box-shadow: 0 30px 70px -40px rgba(60, 44, 20, 0.45);
+    box-shadow: 0 30px 70px -40px rgba(var(--shadow-rgb), 0.45);
 }
 
 .story-card-head {
@@ -270,7 +270,7 @@
     font-size: 13px;
     cursor: pointer;
     text-decoration: underline;
-    text-decoration-color: #D8C9B2;
+    text-decoration-color: var(--line-strong);
     text-underline-offset: 3px;
 }
 
@@ -279,7 +279,7 @@
     margin: 8px 30px 30px;
     padding: 22px;
     background: var(--paper-quiz);
-    border: 1px solid #EFE5D3;
+    border: 1px solid var(--line-soft);
     border-radius: 16px;
 }
 
@@ -295,7 +295,7 @@
     height: 22px;
     border-radius: 50%;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -323,7 +323,7 @@
     width: 100%;
     text-align: left;
     background: var(--paper-card-alt);
-    border: 1px solid #E9DFCC;
+    border: 1px solid var(--card-line);
     color: var(--ink);
     border-radius: 12px;
     padding: 12px 14px;
@@ -338,7 +338,7 @@
 }
 
 .quiz.answered .opt.dim {
-    color: #A99C86;
+    color: var(--ink-faint);
 }
 
 .opt.correct {
@@ -349,7 +349,7 @@
 
 .opt.correct .opt-letter {
     background: var(--good);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .opt.correct .opt-mark {
@@ -364,7 +364,7 @@
 
 .opt.wrong .opt-letter {
     background: var(--bad);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .opt.wrong .opt-mark {
@@ -476,15 +476,15 @@
 .level-card p {
     font-size: 14px;
     line-height: 1.55;
-    color: #6F6553;
+    color: var(--ink-soft);
     margin: 0;
 }
 
 /* ---- Closing CTA ---------------------------------------------------------- */
 
 .closing {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--closing-bg);
+    color: var(--closing-ink);
 }
 
 .closing-inner {
@@ -511,7 +511,7 @@
 .closing-note {
     margin-top: 20px;
     font-size: 14px;
-    color: #A79C88;
+    color: var(--closing-note);
 }
 
 /* ---- Responsive ----------------------------------------------------------- */

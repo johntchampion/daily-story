@@ -68,7 +68,7 @@
     gap: 7px;
     background: transparent;
     color: var(--ink-soft);
-    border: 1px solid #D8C9B2;
+    border: 1px solid var(--line-strong);
     border-radius: 20px;
     padding: 7px 15px;
     font-family: var(--font-sans);
@@ -86,17 +86,17 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #B7A98F;
+    background: var(--ink-faint);
 }
 
 .toggle-en.is-on {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border-color: var(--accent);
 }
 
 .toggle-en.is-on .toggle-en-dot {
-    background: #fff;
+    background: var(--on-accent);
 }
 
 /* ---- Conversation --------------------------------------------------------- */
@@ -132,7 +132,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #B7A98F;
+    color: var(--ink-faint);
 }
 
 .end-mark span.rule {
@@ -145,7 +145,7 @@
     font-family: var(--font-serif);
     font-style: italic;
     font-size: 15px;
-    color: #A0937C;
+    color: var(--ink-faint);
 }
 
 /* ---- Quiz ----------------------------------------------------------------- */
@@ -169,7 +169,7 @@
     justify-content: space-between;
     margin-bottom: 20px;
     padding-bottom: 14px;
-    border-bottom: 1px solid #E1D5BF;
+    border-bottom: 1px solid var(--line);
 }
 
 .quiz-head h2 {
@@ -237,7 +237,7 @@
     width: 100%;
     text-align: left;
     background: var(--paper-card-alt);
-    border: 1px solid #E9DFCC;
+    border: 1px solid var(--card-line);
     color: var(--ink);
     border-radius: 12px;
     padding: 12px 14px;
@@ -256,7 +256,7 @@
 }
 
 .options.answered li:not(.correct):not(.incorrect) {
-    color: #A99C86;
+    color: var(--ink-faint);
 }
 
 .options li.correct {
@@ -267,7 +267,7 @@
 
 .options li.correct .opt-letter {
     background: var(--good);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .options li.correct .opt-mark {
@@ -286,7 +286,7 @@
 
 .options li.incorrect .opt-letter {
     background: var(--bad);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .options li.incorrect .opt-mark {
@@ -445,7 +445,7 @@
 .bookmark p {
     font-size: 13.5px;
     line-height: 1.6;
-    color: #A0937C;
+    color: var(--ink-faint);
     margin: 0;
 }
 
