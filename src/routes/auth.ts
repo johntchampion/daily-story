@@ -10,7 +10,7 @@ const INVALID_CREDENTIALS = 'Invalid email or password'
 // --- Signup ---------------------------------------------------------------
 
 router.get('/signup', (_req: Request, res: Response) => {
-  res.render('signup', { error: null })
+  res.render('signup', { error: null, isLoggedIn: false })
 })
 
 router.post('/signup', async (req: Request, res: Response, next: NextFunction) => {
@@ -22,14 +22,14 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
     if (!email || !password) {
       return res
         .status(400)
-        .render('signup', { error: 'Email and password are required' })
+        .render('signup', { error: 'Email and password are required', isLoggedIn: false })
     }
 
     const existing = await User.findByEmail(email)
     if (existing) {
       return res
         .status(409)
-        .render('signup', { error: 'An account with that email already exists' })
+        .render('signup', { error: 'An account with that email already exists', isLoggedIn: false })
     }
 
     const user = await User.register({ email, password })
@@ -43,7 +43,7 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
 // --- Login ----------------------------------------------------------------
 
 router.get('/login', (_req: Request, res: Response) => {
-  res.render('login', { error: null })
+  res.render('login', { error: null, isLoggedIn: false })
 })
 
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
@@ -54,7 +54,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
     const user = await User.findByEmail(email)
     if (!user || !(await user.verifyPassword(password))) {
-      return res.status(401).render('login', { error: INVALID_CREDENTIALS })
+      return res.status(401).render('login', { error: INVALID_CREDENTIALS, isLoggedIn: false })
     }
 
     await user.recordLogin()

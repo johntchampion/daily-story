@@ -44,6 +44,7 @@ router.get(
           status: 400,
           message: errorMessage,
           details: `Supported languages: ${supportedLanguages}. Supported levels: ${supportedLevels}.`,
+          isLoggedIn: Boolean(req.session.userId),
         })
       }
 

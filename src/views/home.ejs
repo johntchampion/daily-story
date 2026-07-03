@@ -76,7 +76,7 @@
             <p class="eyebrow">A new story every day</p>
             <h1>A short story a day, in the language you're <em>learning</em>.</h1>
             <p class="hero-lead">
-                Every morning, Claude writes you a fresh conversation matched to
+                Every morning, read a new conversation matched to
                 your level. Read it in five minutes, then check yourself with
                 three quick questions.
             </p>
@@ -219,24 +219,7 @@
         </div>
     </section>
 
-    <footer class="site-footer">
-        <div class="brand">
-            <span class="brand-dot"></span>
-            <span class="brand-name">Daily Story</span>
-        </div>
-        <div class="footer-links">
-            <a href="/about">About</a>
-            <a href="#levels">Languages</a>
-            <% if (isLoggedIn) { %>
-                <form action="/logout" method="post" class="nav-form">
-                    <button type="submit">Sign out</button>
-                </form>
-            <% } else { %>
-                <a href="/login">Log in</a>
-            <% } %>
-        </div>
-        <div>Stories written fresh each day by Claude.</div>
-    </footer>
+    <%- include('partials/footer') %>
 
     <script>
         (function () {

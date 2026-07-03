@@ -69,16 +69,18 @@ app.use((req: Request, res: Response) => {
     status: 404,
     message: 'Page Not Found',
     details: `The requested URL ${req.url} was not found on this server.`,
+    isLoggedIn: Boolean(req.session.userId),
   })
 })
 
 // 500 error handler - must be last
-app.use((err: Error, _req: Request, res: Response, _next: any) => {
+app.use((err: Error, req: Request, res: Response, _next: any) => {
   console.error('Error occurred:', err)
   res.status(500).render('error', {
     status: 500,
     message: 'Internal Server Error',
     details: err.message || 'An unexpected error occurred.',
+    isLoggedIn: Boolean(req.session.userId),
   })
 })
 

@@ -208,13 +208,6 @@
         <% } %>
     </section>
 
-    <!-- End mark -->
-    <div class="end-mark" aria-hidden="true">
-        <span class="rule"></span>
-        <span class="word">· · ·</span>
-        <span class="rule"></span>
-    </div>
-
     <!-- ============ QUIZ ============ -->
     <% if (questions && questions.length > 0) { %>
         <section id="quiz" class="quiz-section">
@@ -291,24 +284,7 @@
         <p>A new story lands every morning. <strong>Bookmark this page</strong> and come back tomorrow.</p>
     </div>
 
-    <footer class="site-footer">
-        <div class="brand">
-            <span class="brand-dot"></span>
-            <span class="brand-name">Daily Story</span>
-        </div>
-        <div class="footer-links">
-            <a href="/">Select language &amp; level</a>
-            <a href="/about">About</a>
-            <% if (typeof isLoggedIn !== 'undefined' && isLoggedIn) { %>
-                <form action="/logout" method="post" class="nav-form">
-                    <button type="submit">Sign out</button>
-                </form>
-            <% } else { %>
-                <a href="/login">Log in</a>
-            <% } %>
-        </div>
-        <div>Stories written fresh each day by Claude.</div>
-    </footer>
+    <%- include('partials/footer') %>
 
     <script>
         // ---- Show English toggle ----------------------------------------

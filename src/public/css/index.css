@@ -193,6 +193,7 @@ svg {
 
 .site-footer {
     max-width: var(--shell);
+    width: 100%;
     margin: 0 auto;
     padding: 30px 36px;
     display: flex;
@@ -206,6 +207,12 @@ svg {
 
 .site-footer .brand {
     gap: 9px;
+    flex: 1;
+}
+
+.site-footer>div:last-child {
+    flex: 1;
+    text-align: right;
 }
 
 .site-footer .brand-dot {
