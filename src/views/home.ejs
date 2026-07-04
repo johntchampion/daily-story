@@ -88,10 +88,10 @@
                         <span class="field-label">I want to read in</span>
                         <span class="select-wrap">
                             <select id="language" name="language">
-                                <option value="" disabled selected>Choose a language…</option>
+                                <option value="" disabled <%= !preferredLanguage ? 'selected' : '' %>>Choose a language…</option>
                                 <% languages.forEach(lang => {
                                        const native = nativeNames[lang] || lang; %>
-                                    <option value="<%= lang.toLowerCase() %>"><%= native %> — <%= lang %></option>
+                                    <option value="<%= lang.toLowerCase() %>"<%= preferredLanguage === lang.toLowerCase() ? ' selected' : '' %>><%= native %> — <%= lang %></option>
                                 <% }) %>
                             </select>
                             <span class="caret" aria-hidden="true">▼</span>
@@ -101,10 +101,10 @@
                         <span class="field-label">At a level</span>
                         <span class="select-wrap">
                             <select id="level" name="level">
-                                <option value="" disabled selected>Pick a level…</option>
+                                <option value="" disabled <%= !preferredLevel ? 'selected' : '' %>>Pick a level…</option>
                                 <% orderedLevels.forEach(level => {
                                        const info = levelInfo[level] || { name: '' }; %>
-                                    <option value="<%= level.toLowerCase() %>"><%= info.name %> (<%= level %>)</option>
+                                    <option value="<%= level.toLowerCase() %>"<%= preferredLevel === level.toLowerCase() ? ' selected' : '' %>><%= info.name %> (<%= level %>)</option>
                                 <% }) %>
                             </select>
                             <span class="caret" aria-hidden="true">▼</span>
@@ -238,6 +238,7 @@
 
             languageSelect.addEventListener('change', refreshStart);
             levelSelect.addEventListener('change', refreshStart);
+            refreshStart();
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();

@@ -27,6 +27,11 @@ router.get(
       const allLevels = [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS]
       const isValidLevel = allLevels.includes(normalizedLevel)
 
+      if (isValidLanguage && isValidLevel) {
+        req.session.preferredLanguage = normalizedLanguage
+        req.session.preferredLevel = normalizedLevel.toLowerCase()
+      }
+
       if (!isValidLanguage || !isValidLevel) {
         const supportedLanguages = SUPPORTED_LANGUAGES.join(', ')
         const supportedLevels = allLevels.join(', ')

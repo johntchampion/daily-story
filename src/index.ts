@@ -49,6 +49,8 @@ app.get('/', (req: Request, res: Response) => {
     earlyLevels: EARLY_LEVELS,
     intermediateLevels: INTERMEDIATE_LEVELS,
     isLoggedIn: Boolean(req.session.userId),
+    preferredLanguage: req.session.preferredLanguage ?? null,
+    preferredLevel: req.session.preferredLevel ?? null,
   })
 })
 
