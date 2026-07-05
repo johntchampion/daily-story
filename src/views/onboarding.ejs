@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/icon.png" />
+    <title>Get started · Daily Story</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/onboarding.css">
+
+    <script>
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags resetGroups onFeatureFlags addFeatureFlagsHandler onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init('phc_iUdVH98M9tw8Qt3iOYecZpubxPZKhGtLfXc5poXS1wR', {
+            cookieless_mode: 'always',
+            api_host: 'https://us.i.posthog.com',
+            defaults: '2026-01-30'
+        })
+    </script>
+</head>
+<body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="ob-page">
+        <!-- ============ HEADER ============ -->
+        <header class="site-header">
+            <a class="brand" href="/">
+                <span class="brand-dot"></span>
+                <span class="brand-name">Daily Story</span>
+            </a>
+            <a class="ob-skip" href="/">Skip for now →</a>
+        </header>
+
+        <!-- ============ PROGRESS ============ -->
+        <div class="ob-progress">
+            <div class="ob-progress-meta">
+                <span class="ob-kicker" id="obKicker"></span>
+                <span class="ob-count" id="obCount"></span>
+            </div>
+            <div class="ob-track">
+                <div class="ob-bar" id="obBar"></div>
+            </div>
+        </div>
+
+        <!-- ============ STEPS ============ -->
+        <main class="ob-main" id="obMain">
+
+            <!-- Step 1: Language -->
+            <div class="ob-step" id="obStep1">
+                <h1 class="ob-title">Which language are we reading in?</h1>
+                <p class="ob-sub">You can always add another later — stories come in all of these.</p>
+                <div class="ob-lang-grid">
+                    <button class="ob-choice ob-lang" data-lang="FR">
+                        <span class="ob-lang-chip">FR</span>
+                        <span class="ob-lang-text">
+                            <span class="ob-lang-native">Français</span>
+                            <span class="ob-lang-english">French</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-lang" data-lang="ES">
+                        <span class="ob-lang-chip">ES</span>
+                        <span class="ob-lang-text">
+                            <span class="ob-lang-native">Español</span>
+                            <span class="ob-lang-english">Spanish</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-lang" data-lang="DE">
+                        <span class="ob-lang-chip">DE</span>
+                        <span class="ob-lang-text">
+                            <span class="ob-lang-native">Deutsch</span>
+                            <span class="ob-lang-english">German</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-lang" data-lang="IT">
+                        <span class="ob-lang-chip">IT</span>
+                        <span class="ob-lang-text">
+                            <span class="ob-lang-native">Italiano</span>
+                            <span class="ob-lang-english">Italian</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-lang" data-lang="PT">
+                        <span class="ob-lang-chip">PT</span>
+                        <span class="ob-lang-text">
+                            <span class="ob-lang-native">Português</span>
+                            <span class="ob-lang-english">Portuguese</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-lang" data-lang="JA">
+                        <span class="ob-lang-chip">JA</span>
+                        <span class="ob-lang-text">
+                            <span class="ob-lang-native">日本語</span>
+                            <span class="ob-lang-english">Japanese</span>
+                        </span>
+                    </button>
+                </div>
+                <div class="ob-actions ob-actions-end">
+                    <button class="ob-finish" id="obNext1" data-next disabled>Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Level -->
+            <div class="ob-step" id="obStep2">
+                <div class="ob-greeting" id="obGreeting2"></div>
+                <h1 class="ob-title">How does your <span id="obLangName2">it</span> feel right now?</h1>
+                <p class="ob-sub">Be honest — there are no wrong answers, only the right first story.</p>
+                <div class="ob-level-list">
+                    <button class="ob-choice ob-level" data-level="A1">
+                        <span class="ob-level-label">I'm starting from zero — or close to it.</span>
+                        <span class="ob-level-cefr">A1</span>
+                    </button>
+                    <button class="ob-choice ob-level" data-level="A2">
+                        <span class="ob-level-label">I know words and phrases, but sentences are a stretch.</span>
+                        <span class="ob-level-cefr">A2</span>
+                    </button>
+                    <button class="ob-choice ob-level" data-level="B1">
+                        <span class="ob-level-label">I can have basic conversations, but I don't think I'm fluent.</span>
+                        <span class="ob-level-cefr">B1</span>
+                    </button>
+                    <button class="ob-choice ob-level" data-level="B2">
+                        <span class="ob-level-label">I can talk about most things, with the occasional stumble.</span>
+                        <span class="ob-level-cefr">B2</span>
+                    </button>
+                    <button class="ob-choice ob-level" data-level="C1">
+                        <span class="ob-level-label">I'm nearly fluent — I just want to stay sharp.</span>
+                        <span class="ob-level-cefr">C1</span>
+                    </button>
+                </div>
+                <div class="ob-actions">
+                    <button class="ob-back" data-back>← Back</button>
+                    <button class="ob-finish" id="obNext2" data-next disabled>Next →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Reasons -->
+            <div class="ob-step" id="obStep3">
+                <h1 class="ob-title">What's pulling you toward <span id="obLangName3">it</span>?</h1>
+                <p class="ob-sub">Pick as many as you like — we'll lean your stories that way.</p>
+                <div class="ob-reason-grid">
+                    <button class="ob-choice ob-reason" data-reason="travel">
+                        <span class="ob-reason-dot"></span>
+                        <span class="ob-reason-text">
+                            <span class="ob-reason-title">Travel</span>
+                            <span class="ob-reason-sub">Order, ask, wander — without the phrasebook.</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-reason" data-reason="family">
+                        <span class="ob-reason-dot"></span>
+                        <span class="ob-reason-text">
+                            <span class="ob-reason-title">Family & heritage</span>
+                            <span class="ob-reason-sub">It's the language of people I love.</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-reason" data-reason="work">
+                        <span class="ob-reason-dot"></span>
+                        <span class="ob-reason-text">
+                            <span class="ob-reason-title">Work & career</span>
+                            <span class="ob-reason-sub">Meetings, emails, and sounding sharp.</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-reason" data-reason="culture">
+                        <span class="ob-reason-dot"></span>
+                        <span class="ob-reason-text">
+                            <span class="ob-reason-title">Books, film & music</span>
+                            <span class="ob-reason-sub">Enjoy the originals, not the subtitles.</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-reason" data-reason="brain">
+                        <span class="ob-reason-dot"></span>
+                        <span class="ob-reason-text">
+                            <span class="ob-reason-title">A daily brain workout</span>
+                            <span class="ob-reason-sub">Five focused minutes that feel good.</span>
+                        </span>
+                    </button>
+                    <button class="ob-choice ob-reason" data-reason="move">
+                        <span class="ob-reason-dot"></span>
+                        <span class="ob-reason-text">
+                            <span class="ob-reason-title">Living abroad</span>
+                            <span class="ob-reason-sub">I'm moving — or dreaming about it.</span>
+                        </span>
+                    </button>
+                </div>
+                <div class="ob-actions">
+                    <button class="ob-back" data-back>← Back</button>
+                    <button class="ob-finish" id="obFinish" data-finish>Skip this one →</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Done -->
+            <div class="ob-step ob-step-done" id="obStep4">
+                <div class="ob-greeting" id="obGreeting4"></div>
+                <h1 class="ob-title ob-title-done">Your first story is ready.</h1>
+                <p class="ob-sub ob-sub-done" id="obSummary"></p>
+                <div class="ob-preview">
+                    <div class="ob-preview-head">
+                        <span class="ob-preview-title" id="obStoryTitle"></span>
+                        <span class="ob-preview-tag" id="obStoryTag"></span>
+                    </div>
+                    <div class="ob-preview-msg">
+                        <div class="ob-bubble ob-bubble-a" id="obStoryA"></div>
+                    </div>
+                    <div class="ob-preview-msg right">
+                        <div class="ob-bubble ob-bubble-b" id="obStoryB"></div>
+                    </div>
+                </div>
+                <a class="btn-cta ob-done-cta" href="/">Read my first story →</a>
+                <div class="ob-change"><button class="ob-back" data-back>← Change my answers</button></div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            var LANGS = {
+                FR: { native: 'Français', english: 'French', greeting: 'Bonjour !' },
+                ES: { native: 'Español', english: 'Spanish', greeting: '¡Hola!' },
+                DE: { native: 'Deutsch', english: 'German', greeting: 'Hallo!' },
+                IT: { native: 'Italiano', english: 'Italian', greeting: 'Ciao!' },
+                PT: { native: 'Português', english: 'Portuguese', greeting: 'Olá!' },
+                JA: { native: '日本語', english: 'Japanese', greeting: 'こんにちは!' }
+            };
+
+            var STORIES = {
+                FR: { title: 'Le petit déjeuner', a: 'Tu veux un croissant ?', b: 'Oui, avec plaisir !' },
+                ES: { title: 'El desayuno', a: '¿Quieres un cafecito?', b: '¡Sí, claro que sí!' },
+                DE: { title: 'Das Frühstück', a: 'Möchtest du ein Brötchen?', b: 'Ja, sehr gerne!' },
+                IT: { title: 'La colazione', a: 'Vuoi un cornetto?', b: 'Sì, volentieri!' },
+                PT: { title: 'O pequeno-almoço', a: 'Queres um pastel?', b: 'Sim, claro!' },
+                JA: { title: '朝ごはん', a: 'パンはいかがですか。', b: 'はい、お願いします！' }
+            };
+
+            var REASON_LABELS = {
+                travel: 'travel', family: 'family & heritage', work: 'work & career',
+                culture: 'books, film & music', brain: 'a daily brain workout', move: 'living abroad'
+            };
+
+            var KICKERS = { 1: 'Let\'s set up your story', 2: 'Finding your level', 3: 'Making it yours', 4: 'All set' };
+            var PROGRESS = { 1: 8, 2: 38, 3: 70, 4: 100 };
+
+            var selectedLang = null;
+            var selectedLevel = null;
+            var selectedReasons = [];
+            var currentStep = 1;
+
+            var barEl = document.getElementById('obBar');
+            var kickerEl = document.getElementById('obKicker');
+            var countEl = document.getElementById('obCount');
+
+            function showStep(n) {
+                currentStep = n;
+                document.querySelectorAll('.ob-step').forEach(function (el) {
+                    el.classList.remove('ob-step--active');
+                });
+                document.getElementById('obStep' + n).classList.add('ob-step--active');
+                barEl.style.width = PROGRESS[n] + '%';
+                kickerEl.textContent = KICKERS[n];
+                countEl.textContent = n < 4 ? 'Step ' + n + ' of 3' : 'Done';
+            }
+
+            function populateStep4() {
+                var lang = LANGS[selectedLang];
+                var story = (selectedLang && STORIES[selectedLang]) || STORIES.FR;
+                var picked = selectedReasons.map(function (id) { return REASON_LABELS[id] || id; });
+                var flavor = '';
+                if (picked.length === 1) {
+                    flavor = ' Expect a lean toward ' + picked[0] + '.';
+                } else if (picked.length > 1) {
+                    flavor = ' Expect a lean toward ' + picked.slice(0, -1).join(', ') + ' and ' + picked[picked.length - 1] + '.';
+                }
+                document.getElementById('obGreeting4').textContent = lang ? lang.greeting : '';
+                document.getElementById('obSummary').textContent =
+                    'Every morning: a short ' + (lang ? lang.english : '') +
+                    ' conversation at ' + (selectedLevel || 'your') +
+                    ' level, with three quick questions after.' + flavor;
+                document.getElementById('obStoryTitle').textContent = story.title;
+                document.getElementById('obStoryA').textContent = story.a;
+                document.getElementById('obStoryB').textContent = story.b;
+                document.getElementById('obStoryTag').textContent =
+                    (lang ? lang.native : '') + ' · ' + (selectedLevel || '');
+            }
+
+            document.getElementById('obMain').addEventListener('click', function (e) {
+                var langBtn = e.target.closest('[data-lang]');
+                if (langBtn) {
+                    document.querySelectorAll('[data-lang]').forEach(function (b) { b.classList.remove('is-selected'); });
+                    langBtn.classList.add('is-selected');
+                    selectedLang = langBtn.dataset.lang;
+                    var lang = LANGS[selectedLang];
+                    document.getElementById('obGreeting2').textContent = lang ? lang.greeting : '';
+                    document.getElementById('obLangName2').textContent = lang ? lang.english : 'it';
+                    document.getElementById('obLangName3').textContent = lang ? lang.english : 'it';
+                    document.getElementById('obNext1').disabled = false;
+                    return;
+                }
+
+                var levelBtn = e.target.closest('[data-level]');
+                if (levelBtn) {
+                    document.querySelectorAll('[data-level]').forEach(function (b) { b.classList.remove('is-selected'); });
+                    levelBtn.classList.add('is-selected');
+                    selectedLevel = levelBtn.dataset.level;
+                    document.getElementById('obNext2').disabled = false;
+                    return;
+                }
+
+                if (e.target.closest('[data-next]')) {
+                    showStep(currentStep + 1);
+                    return;
+                }
+
+                var reasonBtn = e.target.closest('[data-reason]');
+                if (reasonBtn) {
+                    var id = reasonBtn.dataset.reason;
+                    var idx = selectedReasons.indexOf(id);
+                    if (idx === -1) {
+                        selectedReasons.push(id);
+                        reasonBtn.classList.add('is-selected');
+                    } else {
+                        selectedReasons.splice(idx, 1);
+                        reasonBtn.classList.remove('is-selected');
+                    }
+                    document.getElementById('obFinish').textContent =
+                        selectedReasons.length > 0 ? 'Continue →' : 'Skip this one →';
+                    return;
+                }
+
+                if (e.target.closest('[data-finish]')) {
+                    populateStep4();
+                    showStep(4);
+                    return;
+                }
+
+                if (e.target.closest('[data-back]')) {
+                    showStep(Math.max(1, currentStep - 1));
+                }
+            });
+
+            showStep(1);
+        })();
+    </script>
+</body>
+</html>

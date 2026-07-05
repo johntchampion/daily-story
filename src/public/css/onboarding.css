@@ -1,0 +1,455 @@
+/* Onboarding wizard — a short, four-step setup flow (language → level → reasons
+   → done). Layered on top of index.css, so every color comes from the shared
+   tokens and the flow follows paper/lamplight modes automatically. */
+
+@keyframes ob-pop {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ob-page {
+    position: relative;
+    min-height: 100vh;
+}
+
+/* ---- Header ---------------------------------------------------------------- */
+
+.ob-skip {
+    font-size: 14px;
+    color: var(--ink-faint);
+}
+
+.ob-skip:hover {
+    color: var(--ink-soft);
+}
+
+/* ---- Progress -------------------------------------------------------------- */
+
+.ob-progress {
+    max-width: 640px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 4px 36px 0;
+}
+
+.ob-progress-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.ob-kicker {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.ob-count {
+    font-size: 13px;
+    color: var(--ink-faint);
+}
+
+.ob-track {
+    height: 5px;
+    background: var(--line-soft);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.ob-bar {
+    height: 100%;
+    width: 8%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.45s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
+/* ---- Step shell ------------------------------------------------------------ */
+
+.ob-main {
+    max-width: 640px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 38px 36px 70px;
+}
+
+.ob-step {
+    display: none;
+}
+
+.ob-step.ob-step--active {
+    display: block;
+    animation: ob-pop 0.4s ease both;
+}
+
+.ob-greeting {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+
+.ob-title {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(30px, 4vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+}
+
+.ob-sub {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    margin: 0 0 30px;
+}
+
+/* ---- Shared choice-button treatment ---------------------------------------- */
+
+.ob-choice {
+    display: flex;
+    text-align: left;
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+
+.ob-choice:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.ob-choice.is-selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
+
+/* ---- Step 1: language ------------------------------------------------------ */
+
+.ob-lang-grid,
+.ob-reason-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ob-lang {
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+}
+
+.ob-lang-chip {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--chip-bg);
+    color: var(--ink-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ob-lang.is-selected .ob-lang-chip {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+.ob-lang-text {
+    min-width: 0;
+}
+
+.ob-lang-native {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.ob-lang-english {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 1px;
+}
+
+/* ---- Step 2: level --------------------------------------------------------- */
+
+.ob-level-list {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.ob-level {
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+}
+
+.ob-level-label {
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+}
+
+.ob-level-cefr {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--ink-muted);
+    background: var(--chip-bg);
+    border-radius: 7px;
+    padding: 5px 9px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ob-level.is-selected .ob-level-cefr {
+    background: var(--accent);
+    color: var(--on-accent);
+}
+
+/* ---- Step 3: reasons ------------------------------------------------------- */
+
+.ob-reason {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px 16px;
+}
+
+.ob-reason-dot {
+    flex-shrink: 0;
+    margin-top: 1px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line-strong);
+    background: transparent;
+    color: var(--on-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ob-reason.is-selected .ob-reason-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.ob-reason.is-selected .ob-reason-dot::before {
+    content: '✓';
+}
+
+.ob-reason-text {
+    min-width: 0;
+}
+
+.ob-reason-title {
+    display: block;
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.ob-reason-sub {
+    display: block;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ink-muted);
+    margin-top: 2px;
+}
+
+/* ---- Navigation controls --------------------------------------------------- */
+
+.ob-back {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--ink-faint);
+    cursor: pointer;
+}
+
+.ob-back:hover {
+    color: var(--ink-soft);
+}
+
+.ob-back-lonely {
+    margin-top: 22px;
+}
+
+.ob-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 26px;
+}
+
+.ob-finish {
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 12px;
+    padding: 13px 26px;
+    font-family: var(--font-sans);
+    font-size: 15.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.ob-finish:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.ob-finish:disabled {
+    background: var(--line-soft);
+    color: var(--ink-faint);
+    cursor: not-allowed;
+}
+
+.ob-actions-end {
+    justify-content: flex-end;
+}
+
+/* ---- Step 4: done ---------------------------------------------------------- */
+
+.ob-step-done {
+    text-align: center;
+}
+
+.ob-step-done .ob-greeting {
+    font-size: 22px;
+    margin: 18px 0 10px;
+}
+
+.ob-title-done {
+    font-size: clamp(32px, 4.4vw, 44px);
+    line-height: 1.08;
+    margin: 0 0 12px;
+}
+
+.ob-sub-done {
+    margin: 0 auto 30px;
+    max-width: 42ch;
+    font-size: 16.5px;
+    line-height: 1.6;
+}
+
+.ob-preview {
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: left;
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: 0 26px 60px -36px rgba(var(--shadow-rgb), 0.5);
+}
+
+.ob-preview-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ob-preview-title {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.ob-preview-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+}
+
+.ob-preview-msg {
+    display: flex;
+    margin-bottom: 9px;
+}
+
+.ob-preview-msg.right {
+    justify-content: flex-end;
+    margin-bottom: 0;
+}
+
+.ob-bubble {
+    max-width: 82%;
+    padding: 9px 13px;
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+.ob-bubble-a {
+    background: var(--paper-card-alt);
+    border: 1px solid var(--card-line);
+    border-radius: 4px 14px 14px 14px;
+    color: var(--ink);
+}
+
+.ob-bubble-b {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: 14px 4px 14px 14px;
+    color: var(--ink);
+}
+
+.ob-done-cta {
+    margin-top: 30px;
+}
+
+.ob-change {
+    margin-top: 16px;
+}
+
+/* ---- Responsive ------------------------------------------------------------ */
+
+@media (max-width: 620px) {
+
+    .ob-progress {
+        padding-left: 22px;
+        padding-right: 22px;
+    }
+
+    .ob-main {
+        padding: 30px 22px 60px;
+    }
+
+    .ob-lang-grid,
+    .ob-reason-grid {
+        grid-template-columns: 1fr;
+    }
+}

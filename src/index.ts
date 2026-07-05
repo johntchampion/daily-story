@@ -61,6 +61,13 @@ app.get('/about', (req: Request, res: Response) => {
   })
 })
 
+// Onboarding flow (currently view-only; the final step links back home)
+app.get('/onboarding', (req: Request, res: Response) => {
+  res.render('onboarding', {
+    isLoggedIn: Boolean(req.session.userId),
+  })
+})
+
 // Story display routes (/:language/:level). Mounted after the static page
 // routes above so they take precedence over the catch-all param route.
 app.use(storyRoutes)
