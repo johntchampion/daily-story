@@ -2,8 +2,7 @@ import { Router, Request, Response } from 'express'
 import {
   StoryGenerationService,
   SUPPORTED_LANGUAGES,
-  EARLY_LEVELS,
-  INTERMEDIATE_LEVELS,
+  LEVELS,
 } from '../storyService.js'
 
 const router = Router()
@@ -84,7 +83,7 @@ router.get('/generate-stories', async (_req: Request, res: Response) => {
         try {
           const batchId = await storyService.generateDailyStories(
             SUPPORTED_LANGUAGES,
-            [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS],
+            LEVELS,
             date
           )
 

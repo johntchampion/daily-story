@@ -14,6 +14,36 @@
 
 </head>
 <body>
+    <%
+        // Presentation copy for the onboarding cards and the story preview,
+        // keyed by the language names in SUPPORTED_LANGUAGES. Any supported
+        // language without an entry here is simply skipped, and any entry for
+        // an unsupported language never renders — the injected `languages`
+        // array is the single source of truth.
+        const langMeta = {
+            English:    { code: 'EN', native: 'English',    greeting: 'Hello!',     story: { title: 'Breakfast',         a: 'Do you want a croissant?',  b: 'Yes, please!' } },
+            Spanish:    { code: 'ES', native: 'Español',    greeting: '¡Hola!',     story: { title: 'El desayuno',       a: '¿Quieres un cafecito?',     b: '¡Sí, claro que sí!' } },
+            French:     { code: 'FR', native: 'Français',   greeting: 'Bonjour !',  story: { title: 'Le petit déjeuner', a: 'Tu veux un croissant ?',    b: 'Oui, avec plaisir !' } },
+            German:     { code: 'DE', native: 'Deutsch',    greeting: 'Hallo!',     story: { title: 'Das Frühstück',     a: 'Möchtest du ein Brötchen?', b: 'Ja, sehr gerne!' } },
+            Italian:    { code: 'IT', native: 'Italiano',   greeting: 'Ciao!',      story: { title: 'La colazione',      a: 'Vuoi un cornetto?',         b: 'Sì, volentieri!' } },
+            Portuguese: { code: 'PT', native: 'Português',  greeting: 'Olá!',       story: { title: 'O pequeno-almoço',  a: 'Queres um pastel?',         b: 'Sim, claro!' } },
+            Chinese:    { code: 'ZH', native: '中文',        greeting: '你好！',      story: { title: '早餐',              a: '你想要包子吗？',             b: '好的，谢谢！' } },
+            Japanese:   { code: 'JA', native: '日本語',      greeting: 'こんにちは!',  story: { title: '朝ごはん',          a: 'パンはいかがですか。',       b: 'はい、お願いします！' } }
+        };
+
+        // The "how does your language feel" prompt for each level, keyed by
+        // CEFR code and rendered in the order of the injected `levels`.
+        const levelCopy = {
+            A1: "I'm starting from zero — or close to it.",
+            A2: "I know words and phrases, but sentences are a stretch.",
+            B1: "I can have basic conversations, but I don't think I'm fluent.",
+            B2: "I can talk about most things, with the occasional stumble."
+        };
+
+        const obLanguages = languages.filter(lang => langMeta[lang]);
+        const obLevels = levels.filter(level => levelCopy[level]);
+    %>
+
     <div class="grain" aria-hidden="true"></div>
 
     <div class="ob-page">
@@ -45,48 +75,15 @@
                 <h1 class="ob-title">Which language are we reading in?</h1>
                 <p class="ob-sub">You can always add another later — stories come in all of these.</p>
                 <div class="ob-lang-grid">
-                    <button class="ob-choice ob-lang" data-lang="FR">
-                        <span class="ob-lang-chip">FR</span>
-                        <span class="ob-lang-text">
-                            <span class="ob-lang-native">Français</span>
-                            <span class="ob-lang-english">French</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-lang" data-lang="ES">
-                        <span class="ob-lang-chip">ES</span>
-                        <span class="ob-lang-text">
-                            <span class="ob-lang-native">Español</span>
-                            <span class="ob-lang-english">Spanish</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-lang" data-lang="DE">
-                        <span class="ob-lang-chip">DE</span>
-                        <span class="ob-lang-text">
-                            <span class="ob-lang-native">Deutsch</span>
-                            <span class="ob-lang-english">German</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-lang" data-lang="IT">
-                        <span class="ob-lang-chip">IT</span>
-                        <span class="ob-lang-text">
-                            <span class="ob-lang-native">Italiano</span>
-                            <span class="ob-lang-english">Italian</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-lang" data-lang="PT">
-                        <span class="ob-lang-chip">PT</span>
-                        <span class="ob-lang-text">
-                            <span class="ob-lang-native">Português</span>
-                            <span class="ob-lang-english">Portuguese</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-lang" data-lang="JA">
-                        <span class="ob-lang-chip">JA</span>
-                        <span class="ob-lang-text">
-                            <span class="ob-lang-native">日本語</span>
-                            <span class="ob-lang-english">Japanese</span>
-                        </span>
-                    </button>
+                    <% obLanguages.forEach(lang => { const meta = langMeta[lang]; %>
+                        <button class="ob-choice ob-lang" data-lang="<%= meta.code %>">
+                            <span class="ob-lang-chip"><%= meta.code %></span>
+                            <span class="ob-lang-text">
+                                <span class="ob-lang-native"><%= meta.native %></span>
+                                <span class="ob-lang-english"><%= lang %></span>
+                            </span>
+                        </button>
+                    <% }) %>
                 </div>
                 <div class="ob-actions ob-actions-end">
                     <button class="ob-finish" id="obNext1" data-next disabled>Next →</button>
@@ -99,26 +96,12 @@
                 <h1 class="ob-title">How does your <span id="obLangName2">it</span> feel right now?</h1>
                 <p class="ob-sub">Be honest — there are no wrong answers, only the right first story.</p>
                 <div class="ob-level-list">
-                    <button class="ob-choice ob-level" data-level="A1">
-                        <span class="ob-level-label">I'm starting from zero — or close to it.</span>
-                        <span class="ob-level-cefr">A1</span>
-                    </button>
-                    <button class="ob-choice ob-level" data-level="A2">
-                        <span class="ob-level-label">I know words and phrases, but sentences are a stretch.</span>
-                        <span class="ob-level-cefr">A2</span>
-                    </button>
-                    <button class="ob-choice ob-level" data-level="B1">
-                        <span class="ob-level-label">I can have basic conversations, but I don't think I'm fluent.</span>
-                        <span class="ob-level-cefr">B1</span>
-                    </button>
-                    <button class="ob-choice ob-level" data-level="B2">
-                        <span class="ob-level-label">I can talk about most things, with the occasional stumble.</span>
-                        <span class="ob-level-cefr">B2</span>
-                    </button>
-                    <button class="ob-choice ob-level" data-level="C1">
-                        <span class="ob-level-label">I'm nearly fluent — I just want to stay sharp.</span>
-                        <span class="ob-level-cefr">C1</span>
-                    </button>
+                    <% obLevels.forEach(level => { %>
+                        <button class="ob-choice ob-level" data-level="<%= level %>">
+                            <span class="ob-level-label"><%= levelCopy[level] %></span>
+                            <span class="ob-level-cefr"><%= level %></span>
+                        </button>
+                    <% }) %>
                 </div>
                 <div class="ob-actions">
                     <button class="ob-back" data-back>← Back</button>
@@ -206,23 +189,16 @@
 
     <script>
         (function () {
-            var LANGS = {
-                FR: { native: 'Français', english: 'French', greeting: 'Bonjour !' },
-                ES: { native: 'Español', english: 'Spanish', greeting: '¡Hola!' },
-                DE: { native: 'Deutsch', english: 'German', greeting: 'Hallo!' },
-                IT: { native: 'Italiano', english: 'Italian', greeting: 'Ciao!' },
-                PT: { native: 'Português', english: 'Portuguese', greeting: 'Olá!' },
-                JA: { native: '日本語', english: 'Japanese', greeting: 'こんにちは!' }
-            };
+            // Built server-side from the same data that renders the language
+            // cards, keyed by the code stored in each card's data-lang.
+            var LANGS = <%- JSON.stringify(Object.fromEntries(obLanguages.map(function (lang) {
+                var meta = langMeta[lang];
+                return [meta.code, { native: meta.native, english: lang, greeting: meta.greeting }];
+            }))) %>;
 
-            var STORIES = {
-                FR: { title: 'Le petit déjeuner', a: 'Tu veux un croissant ?', b: 'Oui, avec plaisir !' },
-                ES: { title: 'El desayuno', a: '¿Quieres un cafecito?', b: '¡Sí, claro que sí!' },
-                DE: { title: 'Das Frühstück', a: 'Möchtest du ein Brötchen?', b: 'Ja, sehr gerne!' },
-                IT: { title: 'La colazione', a: 'Vuoi un cornetto?', b: 'Sì, volentieri!' },
-                PT: { title: 'O pequeno-almoço', a: 'Queres um pastel?', b: 'Sim, claro!' },
-                JA: { title: '朝ごはん', a: 'パンはいかがですか。', b: 'はい、お願いします！' }
-            };
+            var STORIES = <%- JSON.stringify(Object.fromEntries(obLanguages.map(function (lang) {
+                return [langMeta[lang].code, langMeta[lang].story];
+            }))) %>;
 
             var REASON_LABELS = {
                 travel: 'travel', family: 'family & heritage', work: 'work & career',
@@ -254,7 +230,7 @@
 
             function populateStep4() {
                 var lang = LANGS[selectedLang];
-                var story = (selectedLang && STORIES[selectedLang]) || STORIES.FR;
+                var story = (selectedLang && STORIES[selectedLang]) || STORIES[Object.keys(STORIES)[0]];
                 var picked = selectedReasons.map(function (id) { return REASON_LABELS[id] || id; });
                 var flavor = '';
                 if (picked.length === 1) {

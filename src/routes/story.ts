@@ -3,8 +3,7 @@ import path from 'path'
 import { readFile } from 'fs/promises'
 import {
   SUPPORTED_LANGUAGES,
-  EARLY_LEVELS,
-  INTERMEDIATE_LEVELS,
+  LEVELS,
   StoryContent,
 } from '../storyService.js'
 
@@ -24,7 +23,7 @@ router.get(
       const isValidLanguage = SUPPORTED_LANGUAGES.some(
         (lang) => lang.toLowerCase() === normalizedLanguage
       )
-      const allLevels = [...EARLY_LEVELS, ...INTERMEDIATE_LEVELS]
+      const allLevels = LEVELS
       const isValidLevel = allLevels.includes(normalizedLevel)
 
       if (isValidLanguage && isValidLevel) {

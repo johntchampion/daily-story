@@ -29,8 +29,13 @@ export const SUPPORTED_LANGUAGES = [
   'Chinese',
   'Japanese',
 ]
-export const EARLY_LEVELS = ['A1', 'A2']
-export const INTERMEDIATE_LEVELS = ['B1', 'B2']
+// All supported CEFR levels, ordered simplest to most advanced.
+export const LEVELS = ['A1', 'A2', 'B1', 'B2']
+
+// The first two levels are quizzed in English to reduce cognitive load; the
+// rest are quizzed in the target language for full immersion.
+const isEarlyLevel = (level: string): boolean =>
+  level === 'A1' || level === 'A2'
 
 // Simple seeded random number generator for deterministic theme selection
 const seededRandom = (seed: number): number => {
@@ -76,7 +81,7 @@ export class StoryGenerationService {
     const day = date.getDate().toString().padStart(2, '0')
 
     const firstLanguage = SUPPORTED_LANGUAGES[0]?.toLowerCase() || 'spanish'
-    const firstLevel = EARLY_LEVELS[0]?.toLowerCase() || 'a1'
+    const firstLevel = LEVELS[0]?.toLowerCase() || 'a1'
 
     const sampleFilePath = path.join(
       process.cwd(),
@@ -372,8 +377,7 @@ export class StoryGenerationService {
   }
 
   private getStoryTool(language: string, level: string): Anthropic.Tool {
-    const isEarlyLevel = EARLY_LEVELS.includes(level)
-    const questionLanguage = isEarlyLevel ? 'English' : language
+    const questionLanguage = isEarlyLevel(level) ? 'English' : language
 
     // Determine minimum number of messages based on level
     let minMessages = 10
@@ -450,7 +454,7 @@ export class StoryGenerationService {
 
   private getPrompt(language: string, level: string, theme: string): string {
     let promptString = ''
-    const questionLanguage = EARLY_LEVELS.includes(level) ? 'English' : language
+    const questionLanguage = isEarlyLevel(level) ? 'English' : language
 
     switch (level) {
       case 'A1':

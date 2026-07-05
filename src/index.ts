@@ -2,11 +2,7 @@ import 'dotenv/config'
 import path from 'path'
 import express, { Request, Response } from 'express'
 import session from 'express-session'
-import {
-  SUPPORTED_LANGUAGES,
-  EARLY_LEVELS,
-  INTERMEDIATE_LEVELS,
-} from './storyService'
+import { SUPPORTED_LANGUAGES, LEVELS } from './storyService'
 import authRoutes from './routes/auth'
 import utilRoutes from './routes/util'
 import storyRoutes from './routes/story'
@@ -46,8 +42,7 @@ app.use(utilRoutes)
 app.get('/', (req: Request, res: Response) => {
   res.render('home', {
     languages: SUPPORTED_LANGUAGES,
-    earlyLevels: EARLY_LEVELS,
-    intermediateLevels: INTERMEDIATE_LEVELS,
+    levels: LEVELS,
     isLoggedIn: Boolean(req.session.userId),
     preferredLanguage: req.session.preferredLanguage ?? null,
     preferredLevel: req.session.preferredLevel ?? null,
@@ -64,6 +59,8 @@ app.get('/about', (req: Request, res: Response) => {
 // Onboarding flow (currently view-only; the final step links back home)
 app.get('/onboarding', (req: Request, res: Response) => {
   res.render('onboarding', {
+    languages: SUPPORTED_LANGUAGES,
+    levels: LEVELS,
     isLoggedIn: Boolean(req.session.userId),
   })
 })

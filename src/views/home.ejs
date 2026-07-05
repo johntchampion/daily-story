@@ -31,14 +31,14 @@
 
         // Plain-language descriptions shown at the point of choice so users
         // don't need to already know what CEFR levels mean. Ordered simplest to
-        // most advanced, matching earlyLevels + intermediateLevels (A1..B2).
+        // most advanced, matching the injected `levels` (A1..B2).
         const levelInfo = {
             A1: { name: 'Beginner',     desc: 'Greetings, ordering food, asking directions.' },
             A2: { name: 'Conversational', desc: 'Making plans, hobbies, and simple opinions.' },
             B1: { name: 'Intermediate', desc: 'Experiences, opinions, everyday discussions.' },
             B2: { name: 'Advanced',     desc: 'Debates, analysis, and nuanced topics.' }
         };
-        const orderedLevels = [...earlyLevels, ...intermediateLevels];
+        const orderedLevels = levels;
     %>
 
     <div class="grain" aria-hidden="true"></div>
