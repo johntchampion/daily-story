@@ -20,7 +20,6 @@
 - **Auth:** `express-session` (cookie sessions) + `bcrypt` (password hashing)
 - **Build Tools:** TypeScript, tsx, nodemon, copyfiles
 - **Containerization:** Docker + Docker Compose (app + Postgres)
-- **Analytics:** PostHog
 
 ## Project Structure
 
@@ -28,25 +27,31 @@
 src/
 ├── index.ts           # Main Express app (routes, middleware, session setup)
 ├── storyService.ts    # Story generation service (class-based)
+├── constants.ts       # SUPPORTED_LANGUAGES / LEVELS + Language / Level types
 ├── themes.ts          # Theme arrays for each proficiency level
 ├── db.ts              # Shared Postgres connection pool (via DATABASE_URL)
 ├── models/
-│   └── user.ts        # User model (CRUD, bcrypt password hashing)
+│   └── user.ts        # User model (CRUD, bcrypt hashing, preferences)
+├── middleware/
+│   └── requireAuth.ts # Redirects unauthenticated requests to /login
 ├── routes/
-│   ├── auth.ts        # Signup / login / logout routes + requireAuth middleware
+│   ├── auth.ts        # Signup / login / logout routes
 │   ├── util.ts        # Utility/cron routes (/generate-stories)
+│   ├── profile.ts     # Account-holder routes (/profile/onboarding)
 │   └── story.ts       # Story display route (/:language/:level)
 ├── types/
-│   └── session.d.ts   # express-session augmentation (session.userId)
+│   └── session.d.ts   # express-session augmentation (userId, lastViewed*)
 ├── views/             # EJS templates
 │   ├── home.ejs       # Language/level selection page (+ login/logout link)
 │   ├── story.ejs      # Story display with quiz
+│   ├── onboarding.ejs # Post-signup language/level onboarding flow
 │   ├── login.ejs      # Login form
 │   ├── signup.ejs     # Signup form
 │   ├── no-story-today.ejs
 │   └── error.ejs
 └── public/css/        # Stylesheets (dark mode support)
-    └── auth.css       # Login / signup form styles
+    ├── auth.css       # Login / signup form styles
+    └── onboarding.css # Onboarding flow styles
 
 database/              # Postgres container + schema
 ├── Dockerfile         # postgres:18 image, runs setup.sql on first init
@@ -124,6 +129,8 @@ first initialized.
 - `hashed_password` (TEXT, bcrypt with cost factor 12)
 - `created_at`, `updated_at` (TIMESTAMPTZ; `updated_at` maintained by a trigger)
 - `last_logged_in` (TIMESTAMPTZ, nullable)
+- `preferred_language` (TEXT, nullable; canonical name e.g. `'Spanish'`)
+- `preferred_level` (TEXT, nullable; CEFR level e.g. `'A1'`)
 
 **`User` model (`src/models/user.ts`):**
 
@@ -132,6 +139,10 @@ first initialized.
 - `User.findById(id)` / `User.findByEmail(email)` — load (null if missing)
 - `user.verifyPassword(password)` — bcrypt compare
 - `user.recordLogin()` — stamp `last_logged_in`
+- `user.updatePreferences({ language?, level? })` — partial update of the
+  preferred language/level; only provided fields are written (empty object is a
+  no-op). Params are typed with the `Language` / `Level` unions from
+  `src/constants.ts`.
 - `user.save()` / `user.delete()` — update / remove
 
 Emails are normalized (trimmed + lowercased) and format-validated before any
@@ -143,14 +154,21 @@ write, pairing with the `lower(email)` unique index.
   - Currently the default **in-memory** store (drops sessions on restart; swap
     for a persistent store like `connect-pg-simple` before production).
   - Cookie: `httpOnly`, `sameSite: 'lax'`, 30-day `maxAge`.
-- `src/types/session.d.ts` augments `SessionData` with `userId?: number`.
+- `src/types/session.d.ts` augments `SessionData` with `userId?: number` and
+  the last-viewed pair `lastViewedLanguage?: string` / `lastViewedLevel?: string`
+  (both lowercase; set by the story route so the home page can preselect them).
 - Auth routes in `src/routes/auth.ts`:
   - `GET/POST /signup`, `GET/POST /login`, `POST /logout`
   - Login uses a generic "Invalid email or password" message (no user enumeration)
-  - `requireAuth` middleware redirects unauthenticated requests to `/login`
+  - Successful signup logs the user in and redirects to `/profile/onboarding`
+- `requireAuth` middleware lives in `src/middleware/requireAuth.ts` and redirects
+  unauthenticated requests to `/login`. It guards the whole profile router.
 - The home page (`home.ejs`) shows a **Log in** link when logged out and a
   **Sign out** button (POSTs to `/logout`) when logged in, driven by the
-  `isLoggedIn` flag passed from the `/` route.
+  `isLoggedIn` flag passed from the `/` route. The `/` route also preselects a
+  language/level: it uses the signed-in user's saved preferences when present,
+  otherwise falls back to the session's last-viewed values (each field
+  independently).
 
 ## Important Files
 
@@ -159,23 +177,31 @@ write, pairing with the `lower(email)` unique index.
 Thin entry point that wires the app together:
 
 - Body parsing (`urlencoded` + `json`) and `express-session` setup
-- Mounts routers: auth (`routes/auth.ts`), util (`routes/util.ts`), story (`routes/story.ts`)
-- Inline page routes: `/` (home, passes `isLoggedIn`) and `/about`
+- Mounts routers: auth (`routes/auth.ts`), util (`routes/util.ts`),
+  profile (`routes/profile.ts`, mounted under `/profile`), story (`routes/story.ts`)
+- Inline page routes: `/` (home; async — reads the user's saved preferences and
+  passes `isLoggedIn` + preselected language/level) and `/about`
 - 404 and 500 error-handling middleware
 
 Route handlers themselves live in `src/routes/`:
 
 - `routes/util.ts` — `/generate-stories` (owns its `StoryGenerationService` instance)
+- `routes/profile.ts` — `/profile/onboarding` (GET/POST); guarded by `requireAuth`
 - `routes/story.ts` — `/:language/:level` story display + file loading
 
 **Key Routes:**
 
-- `GET /` - Home page with language/level selection
+- `GET /` - Home page with language/level selection (preselected from account
+  preferences or the session's last-viewed values)
 - `GET /generate-stories` - Async batch creation and completed batch processing
   - Processes any completed batches first
   - Checks for in-progress batches (prevents duplicates)
   - Creates new batches for today and tomorrow if needed
   - Returns immediately without waiting for completion
+- `GET /profile/onboarding` - Post-signup onboarding view (account holders only)
+- `POST /profile/onboarding` - Saves chosen language/level to the account
+  (partial saves allowed), mirrors them into the session, then redirects to the
+  matching story
 - `GET /:language/:level` - Display today's story
 
 **Route Logic:**
@@ -185,7 +211,7 @@ The `/generate-stories` endpoint follows a three-step process:
 2. Check for in-progress batches (if found, inform user and return)
 3. Create new batches for missing dates (today/tomorrow)
 
-### src/storyService.ts (771 lines)
+### src/storyService.ts (~500 lines)
 
 Core story generation service using class-based architecture:
 
@@ -201,7 +227,10 @@ Core story generation service using class-based architecture:
 
 **Important Constants:**
 
-- `SUPPORTED_LANGUAGES` - Array of 8 language names
+- `SUPPORTED_LANGUAGES` (8 language names) and `LEVELS` (`['A1','A2','B1','B2']`)
+  live in `src/constants.ts`, declared `as const`. It also exports the derived
+  literal-union types `Language` and `Level`. storyService imports them from
+  there (they are no longer defined in storyService itself).
 - `EARLY_LEVELS = ['A1', 'A2']`
 - `INTERMEDIATE_LEVELS = ['B1', 'B2']`
 - Theme arrays imported from `src/themes.ts` (each level has unique themes)
@@ -389,14 +418,17 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
   - B1: 130 intermediate opinion topics
   - B2: 126 advanced debate topics
 - All 8 languages at same level use the same theme on a given day
-- User accounts exist (email/password) but are not yet tied to story content or progress
+- User accounts (email/password) store a preferred language/level (set during
+  onboarding) used to preselect the home page, but story content and progress
+  are not yet tied to accounts
 - Quiz results are client-side only (not persisted)
 
 ## Common Tasks
 
 ### Adding a New Language
 
-1. Add language to `SUPPORTED_LANGUAGES` in `src/storyService.ts`
+1. Add language to `SUPPORTED_LANGUAGES` in `src/constants.ts` (the `Language`
+   union updates automatically)
 2. AI prompts automatically support the new language (no changes needed)
 3. Rebuild and restart
 
@@ -434,8 +466,9 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
 
 ### Protecting a Route (require login)
 
-- Import `requireAuth` from `src/routes/auth.ts` and add it as middleware:
-  `app.get('/some-page', requireAuth, handler)`
+- Import `requireAuth` from `src/middleware/requireAuth.ts` and add it as
+  middleware: `app.get('/some-page', requireAuth, handler)`, or guard an entire
+  router with `router.use(requireAuth)` (as `routes/profile.ts` does)
 - Unauthenticated requests are redirected to `/login`
 - The logged-in user id is available as `req.session.userId`
 

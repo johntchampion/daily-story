@@ -77,17 +77,3 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 })
 
 export default router
-
-// Middleware: require an authenticated session. Redirects to /login when the
-// request has no logged-in user. Use to protect routes (e.g. streak pages).
-export const requireAuth = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  if (req.session.userId) {
-    next()
-  } else {
-    res.redirect('/login')
-  }
-}

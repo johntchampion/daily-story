@@ -1,8 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
 import { User } from '../models/user.js'
+import { requireAuth } from '../middleware/requireAuth.js'
 
 const router = Router()
+
+// All profile routes are for account holders only.
+router.use(requireAuth)
 
 // --- Onboarding -----------------------------------------------------------
 
