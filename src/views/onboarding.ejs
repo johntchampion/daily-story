@@ -180,7 +180,11 @@
                         <div class="ob-bubble ob-bubble-b" id="obStoryB"></div>
                     </div>
                 </div>
-                <a class="btn-cta ob-done-cta" href="/">Read my first story →</a>
+                <form class="ob-done-form" method="post" action="/profile/onboarding">
+                    <input type="hidden" name="language" id="obInputLang" value="">
+                    <input type="hidden" name="level" id="obInputLevel" value="">
+                    <button type="submit" class="btn-cta ob-done-cta">Read my first story →</button>
+                </form>
                 <div class="ob-change"><button class="ob-back" data-back>← Change my answers</button></div>
             </div>
 
@@ -248,6 +252,11 @@
                 document.getElementById('obStoryB').textContent = story.b;
                 document.getElementById('obStoryTag').textContent =
                     (lang ? lang.native : '') + ' · ' + (selectedLevel || '');
+
+                // Feed the chosen language (canonical English name) and level
+                // into the form that saves preferences and opens the story.
+                document.getElementById('obInputLang').value = lang ? lang.english : '';
+                document.getElementById('obInputLevel').value = selectedLevel || '';
             }
 
             document.getElementById('obMain').addEventListener('click', function (e) {

@@ -2,10 +2,12 @@ import 'dotenv/config'
 import path from 'path'
 import express, { Request, Response } from 'express'
 import session from 'express-session'
-import { SUPPORTED_LANGUAGES, LEVELS } from './storyService'
+import { SUPPORTED_LANGUAGES, LEVELS } from './constants'
+import { User } from './models/user'
 import authRoutes from './routes/auth'
 import utilRoutes from './routes/util'
 import storyRoutes from './routes/story'
+import profileRoutes from './routes/profile'
 
 const app = express()
 app.set('view engine', 'ejs')
@@ -38,29 +40,43 @@ app.use(authRoutes)
 // Utility/cron routes (e.g. /generate-stories)
 app.use(utilRoutes)
 
+// Profile routes (onboarding, preferences) mounted under /profile
+app.use('/profile', profileRoutes)
+
 // Home page route
-app.get('/', (req: Request, res: Response) => {
-  res.render('home', {
-    languages: SUPPORTED_LANGUAGES,
-    levels: LEVELS,
-    isLoggedIn: Boolean(req.session.userId),
-    preferredLanguage: req.session.preferredLanguage ?? null,
-    preferredLevel: req.session.preferredLevel ?? null,
-  })
+app.get('/', async (req: Request, res: Response, next) => {
+  try {
+    // Default to whatever the visitor last viewed (stored in the session).
+    let selectedLanguage = req.session.lastViewedLanguage ?? null
+    let selectedLevel = req.session.lastViewedLevel ?? null
+
+    // When signed in, a saved account preference takes precedence — but only
+    // if both parts are present; otherwise fall back to the last viewed pair.
+    if (req.session.userId) {
+      const user = await User.findById(req.session.userId)
+      if (user?.preferredLanguage) {
+        selectedLanguage = user.preferredLanguage.toLowerCase()
+      }
+      if (user?.preferredLevel) {
+        selectedLevel = user.preferredLevel.toLowerCase()
+      }
+    }
+
+    res.render('home', {
+      languages: SUPPORTED_LANGUAGES,
+      levels: LEVELS,
+      isLoggedIn: Boolean(req.session.userId),
+      preferredLanguage: selectedLanguage,
+      preferredLevel: selectedLevel,
+    })
+  } catch (error) {
+    next(error)
+  }
 })
 
 // About page route
 app.get('/about', (req: Request, res: Response) => {
   res.render('about', {
-    isLoggedIn: Boolean(req.session.userId),
-  })
-})
-
-// Onboarding flow (currently view-only; the final step links back home)
-app.get('/onboarding', (req: Request, res: Response) => {
-  res.render('onboarding', {
-    languages: SUPPORTED_LANGUAGES,
-    levels: LEVELS,
     isLoggedIn: Boolean(req.session.userId),
   })
 })

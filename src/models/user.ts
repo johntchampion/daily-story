@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt'
 import { pool } from '../db.js'
+import { Language, Level } from '../constants.js'
 
 // Cost factor for bcrypt hashing. Higher is slower / more resistant to
 // brute-force; 12 is a sensible modern default.
@@ -29,10 +30,12 @@ type UserRow = {
   created_at: Date
   updated_at: Date
   last_logged_in: Date | null
+  preferred_language: string | null
+  preferred_level: string | null
 }
 
 const COLUMNS =
-  'id, email, hashed_password, created_at, updated_at, last_logged_in'
+  'id, email, hashed_password, created_at, updated_at, last_logged_in, preferred_language, preferred_level'
 
 // An instantiable user account, mapped from the `users` table defined in
 // database/setup.sql. Create new accounts with `User.create()` and load
@@ -44,6 +47,8 @@ export class User {
   createdAt: Date
   updatedAt: Date
   lastLoggedIn: Date | null
+  preferredLanguage: string | null
+  preferredLevel: string | null
 
   private constructor(row: UserRow) {
     this.id = Number(row.id)
@@ -52,6 +57,8 @@ export class User {
     this.createdAt = row.created_at
     this.updatedAt = row.updated_at
     this.lastLoggedIn = row.last_logged_in
+    this.preferredLanguage = row.preferred_language
+    this.preferredLevel = row.preferred_level
   }
 
   // --- Finders / factories ------------------------------------------------
@@ -147,6 +154,45 @@ export class User {
     return this
   }
 
+  // Persist a partial update to the user's preferences. Only the fields
+  // present in `prefs` are written, so callers can update one preference
+  // without resubmitting the rest. Values are stored as-is (canonical language
+  // name, e.g. 'Spanish', and CEFR level, e.g. 'A1'); validation is the
+  // caller's job. A no-op update (empty `prefs`) leaves the row untouched.
+  async updatePreferences(prefs: {
+    language?: Language
+    level?: Level
+  }): Promise<this> {
+    // Map each provided preference to its column.
+    const columns: Partial<Record<keyof UserRow, string>> = {}
+    if (prefs.language !== undefined) columns.preferred_language = prefs.language
+    if (prefs.level !== undefined) columns.preferred_level = prefs.level
+
+    const entries = Object.entries(columns)
+    if (entries.length === 0) return this
+
+    // Build `col = $n` assignments; the id is the final positional param.
+    const assignments = entries
+      .map(([col], i) => `${col} = $${i + 1}`)
+      .join(', ')
+    const values = entries.map(([, value]) => value)
+
+    const { rows } = await pool.query<UserRow>(
+      `UPDATE users
+       SET ${assignments}
+       WHERE id = $${values.length + 1}
+       RETURNING ${COLUMNS}`,
+      [...values, this.id],
+    )
+    if (!rows[0]) {
+      throw new Error(
+        `Cannot update preferences for user ${this.id}: account no longer exists`,
+      )
+    }
+    this.hydrate(rows[0])
+    return this
+  }
+
   // Delete this account. Returns true if a row was removed.
   async delete(): Promise<boolean> {
     const { rowCount } = await pool.query('DELETE FROM users WHERE id = $1', [
@@ -163,5 +209,7 @@ export class User {
     this.createdAt = row.created_at
     this.updatedAt = row.updated_at
     this.lastLoggedIn = row.last_logged_in
+    this.preferredLanguage = row.preferred_language
+    this.preferredLevel = row.preferred_level
   }
 }

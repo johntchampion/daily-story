@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
     hashed_password TEXT        NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    last_logged_in  TIMESTAMPTZ
+    last_logged_in  TIMESTAMPTZ,
+    preferred_language TEXT,
+    preferred_level    TEXT
 );
 
 -- Case-insensitive lookups by email (login).

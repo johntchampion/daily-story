@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { mkdir, writeFile, access } from 'fs/promises'
 import path from 'path'
 import { A1_THEMES, A2_THEMES, B1_THEMES, B2_THEMES } from './themes.js'
+import { SUPPORTED_LANGUAGES, LEVELS } from './constants.js'
 
 export type StoryContent = {
   title: string
@@ -18,19 +19,6 @@ export type StoryContent = {
     correctAnswer: number
   }[]
 }
-
-export const SUPPORTED_LANGUAGES = [
-  'English',
-  'Spanish',
-  'French',
-  'German',
-  'Italian',
-  'Portuguese',
-  'Chinese',
-  'Japanese',
-]
-// All supported CEFR levels, ordered simplest to most advanced.
-export const LEVELS = ['A1', 'A2', 'B1', 'B2']
 
 // The first two levels are quizzed in English to reduce cognitive load; the
 // rest are quizzed in the target language for full immersion.
@@ -317,8 +305,8 @@ export class StoryGenerationService {
   }
 
   async generateDailyStories(
-    languages: string[],
-    levels: string[],
+    languages: readonly string[],
+    levels: readonly string[],
     targetDate?: Date
   ): Promise<string> {
     console.log('Generating daily stories using Message Batches API...')

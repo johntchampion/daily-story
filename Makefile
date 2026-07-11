@@ -4,7 +4,7 @@ DB_SERVICE := daily-story-db
 
 # Start the Postgres database container (uses the db-data volume).
 db-up:
-	docker compose up -d $(DB_SERVICE)
+	docker compose up -d $(DB_SERVICE) --build
 
 # Stop and remove the database container (keeps the db-data volume).
 db-down:

@@ -34,7 +34,8 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
 
     const user = await User.register({ email, password })
     req.session.userId = user.id
-    res.redirect('/')
+    // Send new accounts through onboarding to pick a language and level.
+    res.redirect('/profile/onboarding')
   } catch (error) {
     next(error)
   }

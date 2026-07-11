@@ -1,11 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import path from 'path'
 import { readFile } from 'fs/promises'
-import {
-  SUPPORTED_LANGUAGES,
-  LEVELS,
-  StoryContent,
-} from '../storyService.js'
+import { StoryContent } from '../storyService.js'
+import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
 
 const router = Router()
 
@@ -24,11 +21,11 @@ router.get(
         (lang) => lang.toLowerCase() === normalizedLanguage
       )
       const allLevels = LEVELS
-      const isValidLevel = allLevels.includes(normalizedLevel)
+      const isValidLevel = allLevels.some((lvl) => lvl === normalizedLevel)
 
       if (isValidLanguage && isValidLevel) {
-        req.session.preferredLanguage = normalizedLanguage
-        req.session.preferredLevel = normalizedLevel.toLowerCase()
+        req.session.lastViewedLanguage = normalizedLanguage
+        req.session.lastViewedLevel = normalizedLevel.toLowerCase()
       }
 
       if (!isValidLanguage || !isValidLevel) {
