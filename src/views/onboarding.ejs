@@ -31,17 +31,16 @@
             Japanese:   { code: 'JA', native: '日本語',      greeting: 'こんにちは!',  story: { title: '朝ごはん',          a: 'パンはいかがですか。',       b: 'はい、お願いします！' } }
         };
 
-        // The "how does your language feel" prompt for each level, keyed by
-        // CEFR code and rendered in the order of the injected `levels`.
-        const levelCopy = {
-            A1: "I'm starting from zero — or close to it.",
-            A2: "I know words and phrases, but sentences are a stretch.",
-            B1: "I can have basic conversations, but I don't think I'm fluent.",
-            B2: "I can talk about most things, with the occasional stumble."
-        };
-
         const obLanguages = languages.filter(lang => langMeta[lang]);
-        const obLevels = levels.filter(level => levelCopy[level]);
+
+        // The skill self-assessment (step 2) and reasons (step 3) questions
+        // are injected from the server (src/questions/) so the same option
+        // list backs both what's rendered here and what's recorded as a
+        // user_response on submit. Assessment options are filtered to levels
+        // the app actually supports, matching the `languages`/`obLanguages`
+        // pattern above.
+        const obAssessments = skillAssessmentQuestion.options.filter(opt => levels.includes(opt.level));
+        const obReasons = reasonsQuestion.options;
     %>
 
     <div class="grain" aria-hidden="true"></div>
@@ -96,10 +95,10 @@
                 <h1 class="ob-title">How does your <span id="obLangName2">it</span> feel right now?</h1>
                 <p class="ob-sub">Be honest — there are no wrong answers, only the right first story.</p>
                 <div class="ob-level-list">
-                    <% obLevels.forEach(level => { %>
-                        <button class="ob-choice ob-level" data-level="<%= level %>">
-                            <span class="ob-level-label"><%= levelCopy[level] %></span>
-                            <span class="ob-level-cefr"><%= level %></span>
+                    <% obAssessments.forEach(opt => { %>
+                        <button class="ob-choice ob-level" data-level="<%= opt.level %>" data-assessment="<%= opt.id %>">
+                            <span class="ob-level-label"><%= opt.label %></span>
+                            <span class="ob-level-cefr"><%= opt.level %></span>
                         </button>
                     <% }) %>
                 </div>
@@ -114,48 +113,15 @@
                 <h1 class="ob-title">What's pulling you toward <span id="obLangName3">it</span>?</h1>
                 <p class="ob-sub">Pick as many as you like — we'll lean your stories that way.</p>
                 <div class="ob-reason-grid">
-                    <button class="ob-choice ob-reason" data-reason="travel">
-                        <span class="ob-reason-dot"></span>
-                        <span class="ob-reason-text">
-                            <span class="ob-reason-title">Travel</span>
-                            <span class="ob-reason-sub">Order, ask, wander — without the phrasebook.</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-reason" data-reason="family">
-                        <span class="ob-reason-dot"></span>
-                        <span class="ob-reason-text">
-                            <span class="ob-reason-title">Family & heritage</span>
-                            <span class="ob-reason-sub">It's the language of people I love.</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-reason" data-reason="work">
-                        <span class="ob-reason-dot"></span>
-                        <span class="ob-reason-text">
-                            <span class="ob-reason-title">Work & career</span>
-                            <span class="ob-reason-sub">Meetings, emails, and sounding sharp.</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-reason" data-reason="culture">
-                        <span class="ob-reason-dot"></span>
-                        <span class="ob-reason-text">
-                            <span class="ob-reason-title">Books, film & music</span>
-                            <span class="ob-reason-sub">Enjoy the originals, not the subtitles.</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-reason" data-reason="brain">
-                        <span class="ob-reason-dot"></span>
-                        <span class="ob-reason-text">
-                            <span class="ob-reason-title">A daily brain workout</span>
-                            <span class="ob-reason-sub">Five focused minutes that feel good.</span>
-                        </span>
-                    </button>
-                    <button class="ob-choice ob-reason" data-reason="move">
-                        <span class="ob-reason-dot"></span>
-                        <span class="ob-reason-text">
-                            <span class="ob-reason-title">Living abroad</span>
-                            <span class="ob-reason-sub">I'm moving — or dreaming about it.</span>
-                        </span>
-                    </button>
+                    <% obReasons.forEach(reason => { %>
+                        <button class="ob-choice ob-reason" data-reason="<%= reason.id %>">
+                            <span class="ob-reason-dot"></span>
+                            <span class="ob-reason-text">
+                                <span class="ob-reason-title"><%= reason.label %></span>
+                                <span class="ob-reason-sub"><%= reason.description %></span>
+                            </span>
+                        </button>
+                    <% }) %>
                 </div>
                 <div class="ob-actions">
                     <button class="ob-back" data-back>← Back</button>
@@ -183,6 +149,8 @@
                 <form class="ob-done-form" method="post" action="/profile/onboarding">
                     <input type="hidden" name="language" id="obInputLang" value="">
                     <input type="hidden" name="level" id="obInputLevel" value="">
+                    <input type="hidden" name="skillAssessment" id="obInputAssessment" value="">
+                    <div id="obReasonInputs"></div>
                     <button type="submit" class="btn-cta ob-done-cta">Read my first story →</button>
                 </form>
                 <div class="ob-change"><button class="ob-back" data-back>← Change my answers</button></div>
@@ -204,16 +172,16 @@
                 return [langMeta[lang].code, langMeta[lang].story];
             }))) %>;
 
-            var REASON_LABELS = {
-                travel: 'travel', family: 'family & heritage', work: 'work & career',
-                culture: 'books, film & music', brain: 'a daily brain workout', move: 'living abroad'
-            };
+            var REASON_LABELS = <%- JSON.stringify(Object.fromEntries(obReasons.map(function (reason) {
+                return [reason.id, reason.label.toLowerCase()];
+            }))) %>;
 
             var KICKERS = { 1: 'Let\'s set up your story', 2: 'Finding your level', 3: 'Making it yours', 4: 'All set' };
             var PROGRESS = { 1: 8, 2: 38, 3: 70, 4: 100 };
 
             var selectedLang = null;
             var selectedLevel = null;
+            var selectedAssessment = null;
             var selectedReasons = [];
             var currentStep = 1;
 
@@ -253,10 +221,22 @@
                 document.getElementById('obStoryTag').textContent =
                     (lang ? lang.native : '') + ' · ' + (selectedLevel || '');
 
-                // Feed the chosen language (canonical English name) and level
-                // into the form that saves preferences and opens the story.
+                // Feed the chosen language (canonical English name), level,
+                // self-assessment, and reasons into the form that saves
+                // preferences, records the richer answers, and opens the story.
                 document.getElementById('obInputLang').value = lang ? lang.english : '';
                 document.getElementById('obInputLevel').value = selectedLevel || '';
+                document.getElementById('obInputAssessment').value = selectedAssessment || '';
+
+                var reasonInputs = document.getElementById('obReasonInputs');
+                reasonInputs.innerHTML = '';
+                selectedReasons.forEach(function (id) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'reasons';
+                    input.value = id;
+                    reasonInputs.appendChild(input);
+                });
             }
 
             document.getElementById('obMain').addEventListener('click', function (e) {
@@ -278,6 +258,7 @@
                     document.querySelectorAll('[data-level]').forEach(function (b) { b.classList.remove('is-selected'); });
                     levelBtn.classList.add('is-selected');
                     selectedLevel = levelBtn.dataset.level;
+                    selectedAssessment = levelBtn.dataset.assessment;
                     document.getElementById('obNext2').disabled = false;
                     return;
                 }

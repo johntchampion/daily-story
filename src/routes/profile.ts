@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
 import { User } from '../models/user.js'
+import { UserResponse } from '../models/userResponse.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { SKILL_ASSESSMENT, LEARNING_REASONS } from '../questions/index.js'
 
 const router = Router()
 
@@ -15,6 +17,8 @@ router.get('/onboarding', (req: Request, res: Response) => {
   res.render('onboarding', {
     languages: SUPPORTED_LANGUAGES,
     levels: LEVELS,
+    skillAssessmentQuestion: SKILL_ASSESSMENT,
+    reasonsQuestion: LEARNING_REASONS,
     isLoggedIn: Boolean(req.session.userId),
   })
 })
@@ -39,29 +43,66 @@ router.post(
       )
       const level = LEVELS.find((lvl) => lvl === rawLevel.toUpperCase())
 
+      // The richer skill self-assessment the level buttons now offer (each
+      // maps to the CEFR `level` above, submitted alongside it). Matching
+      // against the known option list also validates the submitted id.
+      const skillAssessmentId =
+        typeof req.body.skillAssessment === 'string'
+          ? req.body.skillAssessment.trim()
+          : ''
+      const skillAssessment = SKILL_ASSESSMENT.options.find(
+        (opt) => opt.id === skillAssessmentId,
+      )
+
+      // Reasons is a multi-select: zero, one, or many `reasons` fields may be
+      // submitted. Ignore anything that doesn't match a known option.
+      const rawReasonsForLearning = req.body.reasons
+      const reasonIds = Array.isArray(rawReasonsForLearning)
+        ? rawReasonsForLearning.filter(
+            (r): r is string => typeof r === 'string',
+          )
+        : typeof rawReasonsForLearning === 'string'
+          ? [rawReasonsForLearning]
+          : []
+      const selectedReasons = LEARNING_REASONS.options.filter((opt) =>
+        reasonIds.includes(opt.id),
+      )
+
       if (req.session.userId) {
         const user = await User.findById(req.session.userId)
         if (user) {
-          // Partial update: only the provided fields are written (no-op if
-          // neither was chosen).
           await user.updatePreferences({
             ...(language ? { language } : {}),
             ...(level ? { level } : {}),
           })
+
+          if (skillAssessment) {
+            await UserResponse.record({
+              userId: user.id,
+              questionKey: SKILL_ASSESSMENT.key,
+              question: SKILL_ASSESSMENT.question,
+              possibleAnswers: SKILL_ASSESSMENT.options.map((opt) => opt.label),
+              answer: skillAssessment.label,
+            })
+          }
+          if (selectedReasons.length > 0) {
+            await UserResponse.record({
+              userId: user.id,
+              questionKey: LEARNING_REASONS.key,
+              question: LEARNING_REASONS.question,
+              possibleAnswers: LEARNING_REASONS.options.map((opt) => opt.label),
+              answer: selectedReasons.map((opt) => opt.label),
+            })
+          }
         }
       }
 
-      // Mirror provided values into the session (lowercase to match the story
-      // route convention), leaving any prior values untouched.
       if (language) req.session.lastViewedLanguage = language.toLowerCase()
       if (level) req.session.lastViewedLevel = level.toLowerCase()
 
-      // Send them to a story, filling any gap from the session or the first
-      // supported option so the URL is always valid.
       const destLanguage =
         req.session.lastViewedLanguage ?? SUPPORTED_LANGUAGES[0].toLowerCase()
-      const destLevel =
-        req.session.lastViewedLevel ?? LEVELS[0].toLowerCase()
+      const destLevel = req.session.lastViewedLevel ?? LEVELS[0].toLowerCase()
 
       res.redirect(`/${destLanguage}/${destLevel}`)
     } catch (error) {
