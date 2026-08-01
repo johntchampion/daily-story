@@ -4,6 +4,7 @@ import express, { Request, Response } from 'express'
 import session from 'express-session'
 import { SUPPORTED_LANGUAGES, LEVELS } from './constants'
 import { User } from './models/user'
+import { syncQuestions } from './questions/sync'
 import authRoutes from './routes/auth'
 import utilRoutes from './routes/util'
 import storyRoutes from './routes/story'
@@ -106,6 +107,12 @@ app.use((err: Error, req: Request, res: Response, _next: any) => {
   })
 })
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`Server is running on port ${process.env.PORT || 3000}`)
-})
+async function start() {
+  await syncQuestions()
+
+  app.listen(process.env.PORT || 3000, () => {
+    console.log(`Server is running on port ${process.env.PORT || 3000}`)
+  })
+}
+
+start()

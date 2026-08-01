@@ -4,21 +4,16 @@ type UserResponseRow = {
   id: string
   user_id: string
   question_key: string
-  question: string
-  possible_answers: unknown | null
   answer: unknown
   created_at: Date
 }
 
-const COLUMNS =
-  'id, user_id, question_key, question, possible_answers, answer, created_at'
+const COLUMNS = 'id, user_id, question_key, answer, created_at'
 
 export class UserResponse {
   id: number
   userId: number
   questionKey: string
-  question: string
-  possibleAnswers: unknown | null
   answer: unknown
   createdAt: Date
 
@@ -26,34 +21,24 @@ export class UserResponse {
     this.id = Number(row.id)
     this.userId = Number(row.user_id)
     this.questionKey = row.question_key
-    this.question = row.question
-    this.possibleAnswers = row.possible_answers
     this.answer = row.answer
     this.createdAt = row.created_at
   }
 
   // Record a new answer. Always inserts — never updates a prior answer to the
   // same question, so answering again just adds another row to the history.
+  // `answer` holds the selected option key(s) (see question_options), or raw
+  // text/JSON for free-response questions with no options.
   static async record(input: {
     userId: number
     questionKey: string
-    question: string
-    possibleAnswers?: unknown
     answer: unknown
   }): Promise<UserResponse> {
     const { rows } = await pool.query<UserResponseRow>(
-      `INSERT INTO user_responses (user_id, question_key, question, possible_answers, answer)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO user_responses (user_id, question_key, answer)
+       VALUES ($1, $2, $3)
        RETURNING ${COLUMNS}`,
-      [
-        input.userId,
-        input.questionKey,
-        input.question,
-        input.possibleAnswers !== undefined
-          ? JSON.stringify(input.possibleAnswers)
-          : null,
-        JSON.stringify(input.answer),
-      ],
+      [input.userId, input.questionKey, JSON.stringify(input.answer)],
     )
     return new UserResponse(rows[0]!)
   }

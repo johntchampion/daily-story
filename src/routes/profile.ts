@@ -80,18 +80,14 @@ router.post(
             await UserResponse.record({
               userId: user.id,
               questionKey: SKILL_ASSESSMENT.key,
-              question: SKILL_ASSESSMENT.question,
-              possibleAnswers: SKILL_ASSESSMENT.options.map((opt) => opt.label),
-              answer: skillAssessment.label,
+              answer: skillAssessment.id,
             })
           }
           if (selectedReasons.length > 0) {
             await UserResponse.record({
               userId: user.id,
               questionKey: LEARNING_REASONS.key,
-              question: LEARNING_REASONS.question,
-              possibleAnswers: LEARNING_REASONS.options.map((opt) => opt.label),
-              answer: selectedReasons.map((opt) => opt.label),
+              answer: selectedReasons.map((opt) => opt.id),
             })
           }
         }

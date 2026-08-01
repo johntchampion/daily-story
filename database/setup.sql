@@ -31,6 +31,42 @@ CREATE TRIGGER users_set_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION set_updated_at();
 
+-- Questions asked of users (currently surfaced during onboarding). The code
+-- in src/questions/ is the source of truth; src/questions/sync.ts keeps
+-- these rows in step with it (insert new, update changed, leave the rest
+-- alone) on every app startup.
+CREATE TABLE IF NOT EXISTS questions (
+    key         TEXT        PRIMARY KEY,
+    question    TEXT        NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+DROP TRIGGER IF EXISTS questions_set_updated_at ON questions;
+CREATE TRIGGER questions_set_updated_at
+    BEFORE UPDATE ON questions
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+
+-- The options offered for each question (QuestionOption in code).
+CREATE TABLE IF NOT EXISTS question_options (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    question_key TEXT        NOT NULL REFERENCES questions(key) ON DELETE CASCADE,
+    option_key   TEXT        NOT NULL,
+    label        TEXT        NOT NULL,
+    description  TEXT,
+    level        TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (question_key, option_key)
+);
+
+DROP TRIGGER IF EXISTS question_options_set_updated_at ON question_options;
+CREATE TRIGGER question_options_set_updated_at
+    BEFORE UPDATE ON question_options
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+
 -- Free-form user sentiment, feedback, and preferences that aren't used by the
 -- app's functionality (e.g. "why are you learning this language?"). Rows are
 -- append-only: answering the same question again inserts a new row rather
@@ -38,9 +74,7 @@ CREATE TRIGGER users_set_updated_at
 CREATE TABLE IF NOT EXISTS user_responses (
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id          BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    question_key     TEXT        NOT NULL,
-    question         TEXT        NOT NULL,
-    possible_answers JSONB,
+    question_key     TEXT        NOT NULL REFERENCES questions(key),
     answer           JSONB       NOT NULL,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
