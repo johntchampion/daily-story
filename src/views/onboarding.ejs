@@ -39,7 +39,7 @@
         // user_response on submit. Assessment options are filtered to levels
         // the app actually supports, matching the `languages`/`obLanguages`
         // pattern above.
-        const obAssessments = skillAssessmentQuestion.options.filter(opt => levels.includes(opt.level));
+        const obAssessments = skillAssessmentQuestion.options.filter(opt => levels.includes(opt.value));
         const obReasons = reasonsQuestion.options;
     %>
 
@@ -96,9 +96,9 @@
                 <p class="ob-sub">Be honest — there are no wrong answers, only the right first story.</p>
                 <div class="ob-level-list">
                     <% obAssessments.forEach(opt => { %>
-                        <button class="ob-choice ob-level" data-level="<%= opt.level %>" data-assessment="<%= opt.id %>">
+                        <button class="ob-choice ob-level" data-level="<%= opt.value %>" data-assessment="<%= opt.id %>">
                             <span class="ob-level-label"><%= opt.label %></span>
-                            <span class="ob-level-cefr"><%= opt.level %></span>
+                            <span class="ob-level-cefr"><%= opt.value %></span>
                         </button>
                     <% }) %>
                 </div>

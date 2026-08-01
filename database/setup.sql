@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS question_options (
     option_key   TEXT        NOT NULL,
     label        TEXT        NOT NULL,
     description  TEXT,
-    level        TEXT,
+    value        TEXT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (question_key, option_key)

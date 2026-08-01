@@ -22,21 +22,21 @@ export async function syncQuestions(): Promise<void> {
 
       for (const option of question.options) {
         await client.query(
-          `INSERT INTO question_options (question_key, option_key, label, description, level)
+          `INSERT INTO question_options (question_key, option_key, label, description, value)
            VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (question_key, option_key) DO UPDATE SET
              label = EXCLUDED.label,
              description = EXCLUDED.description,
-             level = EXCLUDED.level
+             value = EXCLUDED.value
            WHERE question_options.label IS DISTINCT FROM EXCLUDED.label
               OR question_options.description IS DISTINCT FROM EXCLUDED.description
-              OR question_options.level IS DISTINCT FROM EXCLUDED.level`,
+              OR question_options.value IS DISTINCT FROM EXCLUDED.value`,
           [
             question.key,
             option.id,
             option.label,
             option.description ?? null,
-            option.level ?? null,
+            option.value ?? null,
           ],
         )
       }
