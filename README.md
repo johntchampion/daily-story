@@ -12,24 +12,66 @@ Supported languages right now include English, Spanish, French, German, Italian,
 
 ## Running On Your Machine
 
-You must have an active API Key from Anthropic for this to work.
+You must have an active API Key from Anthropic for this to work. Node.js is required to run the app. A Postgres database is also required. Both the app and the database can be spun up with Docker for convenience. Any Postgres instance works, including one installed directly on your machine, as long as `DATABASE_URL` points to it and `database/setup.sql` has been applied.
 
 ### Environment Variables
 
-| Name              |        Description         |           Example |
-| :---------------- | :------------------------: | ----------------: |
-| ANTHROPIC_API_KEY | The API Key for Anthropic. | anthropic-api-key |
+Set these in a `.env` file at the project root (gitignored).
 
-### Starting The App
+| Name              |                     Description                      |                                           Example |
+| :---------------- | :--------------------------------------------------: | ------------------------------------------------: |
+| ANTHROPIC_API_KEY |                 API key for Claude.                  |                                 anthropic-api-key |
+| DATABASE_URL      |    Postgres connection string for user accounts.     | postgres://db:password@localhost:5432/daily_story |
+| POSTGRES_USER     |    Postgres username (must match `DATABASE_URL`).    |                                                db |
+| POSTGRES_PASSWORD |    Postgres password (must match `DATABASE_URL`).    |                                          password |
+| POSTGRES_DB       | Postgres database name (must match `DATABASE_URL`).  |                                       daily_story |
+| SESSION_SECRET    |         Secret used to sign session cookies.         |                               a-long-random-value |
+| PORT              | Port the app listens on. Optional, defaults to 3000. |                                              3000 |
 
-Node.js must be installed on your machine. Install dependencies and then run the app.
+`POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are only read by Docker Compose, to configure the `daily-story-db` container — they're not needed if you're pointing `DATABASE_URL` at a Postgres instance you're running yourself.
+
+### Option 1: Full stack with Docker Compose
+
+The simplest way to run everything — the app and Postgres — together:
+
+```
+make up
+```
+
+This builds and starts both containers (equivalent to `docker compose up --build`), applying `database/setup.sql` automatically on the database's first init. The app is available at `http://localhost:3000` (or whichever `PORT` you set). Stop everything with:
+
+```
+make down
+```
+
+### Option 2: Local Node process + separate database
+
+Better for active development, since `npm run dev` hot-reloads on file changes. The app just needs a reachable Postgres database — how you run one is up to you.
+
+To run Postgres in a container, start just the database:
+
+```
+make db-up
+```
+
+(Or, if you'd rather not use Docker at all, install Postgres yourself and apply the schema with `psql "$DATABASE_URL" -f database/setup.sql`.)
+
+Then install dependencies and run the app locally:
 
 ```
 npm install
 npm run dev
 ```
 
-In production, build the project and run from the dist folder.
+If you used `make db-up`, stop the database when you're done:
+
+```
+make db-down
+```
+
+### Production Build
+
+To run as a production app, build the project and run from the compiled `dist` folder:
 
 ```
 npm install

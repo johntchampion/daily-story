@@ -33,11 +33,12 @@ src/
 ├── models/
 │   ├── user.ts        # User model (CRUD, bcrypt hashing, preferences)
 │   └── userResponse.ts # UserResponse model (append-only sentiment/feedback answers)
-├── questions/
-│   ├── types.ts        # Question / QuestionOption type definitions
-│   ├── skillAssessment.ts  # Onboarding skill self-assessment Question
-│   ├── learningReasons.ts  # Onboarding learning-reasons Question
-│   └── index.ts        # Barrel — re-exports every Question + the shared types
+├── survey/
+│   ├── types.ts        # SurveyQuestion / SurveyQuestionOption type definitions
+│   ├── skillAssessment.ts  # Onboarding skill self-assessment SurveyQuestion
+│   ├── learningReasons.ts  # Onboarding learning-reasons SurveyQuestion
+│   ├── sync.ts         # syncSurveyQuestions() — syncs survey_questions/survey_question_options from code
+│   └── index.ts        # Barrel — re-exports every SurveyQuestion, shared types, and ALL_SURVEY_QUESTIONS
 ├── middleware/
 │   └── requireAuth.ts # Redirects unauthenticated requests to /login
 ├── routes/
@@ -61,7 +62,7 @@ src/
 
 database/              # Postgres container + schema
 ├── Dockerfile         # postgres:18 image, runs setup.sql on first init
-└── setup.sql          # users table, indexes, updated_at trigger
+└── setup.sql          # users, survey_questions, survey_question_options, user_responses; indexes, updated_at triggers
 
 stories/               # Generated stories (gitignored)
 └── YYYY/MM/DD/{language}/{level}/story.json
@@ -154,60 +155,93 @@ first initialized.
 Emails are normalized (trimmed + lowercased) and format-validated before any
 write, pairing with the `lower(email)` unique index.
 
-### User Responses (sentiment / feedback / preferences)
+### Survey Questions & User Responses (sentiment / feedback / preferences)
 
-Separate from the account fields above, `user_responses` stores free-form
-answers that aren't used by the app's functionality — sentiment, feedback, and
-preferences collected purely for analytics and personalizing the experience
-(e.g. "why are you learning this language?"). Unlike `users`, this table is
-**append-only**: answering the same question again inserts a new row instead
-of overwriting the previous answer, so a full history is preserved.
+Three tables work together to collect free-form data that isn't used by the
+app's functionality — sentiment, feedback, and preferences collected purely
+for analytics and personalizing the experience (e.g. "why are you learning
+this language?"). This is deliberately separate from anything feature-related
+— in particular it has nothing to do with `StoryContent.questions`, the
+unrelated comprehension-quiz questions embedded in each story's JSON.
+
+- **`survey_questions`** / **`survey_question_options`** — the questions and
+  their answer options, normalized into their own tables (keyed by the same
+  stable `key`/`id` strings used in code) so the question text and option
+  labels aren't duplicated on every response row. These are **managed
+  entirely from code** (see below) — never insert/update them by hand.
+- **`user_responses`** — a user's actual answers. Unlike `users`, this table
+  is **append-only**: answering the same question again inserts a new row
+  instead of overwriting the previous answer, so a full history is
+  preserved.
+
+**`survey_questions` table:** `key` (TEXT, PK), `question` (TEXT, the prompt
+text), `created_at`/`updated_at` (TIMESTAMPTZ; `updated_at` maintained by a
+trigger).
+
+**`survey_question_options` table:** `id` (BIGINT identity, PK),
+`question_key` (TEXT, FK → `survey_questions.key`, `ON DELETE CASCADE`),
+`option_key` (TEXT), `label` (TEXT, the display text), `description` (TEXT,
+nullable), `value` (TEXT, nullable — an optional machine-usable value the
+option maps to, distinct from its label, e.g. the CEFR level
+`'A1'`–`'B2'` for skill-assessment options), `created_at`/`updated_at`.
+Unique on `(question_key, option_key)`.
 
 **`user_responses` table:**
 
 - `id` (BIGINT identity, PK)
 - `user_id` (BIGINT, FK → `users.id`, `ON DELETE CASCADE`)
-- `question_key` (TEXT; stable identifier for the question, e.g. `'learning_reasons'`)
-- `question` (TEXT; the question text as shown at the time of asking)
-- `possible_answers` (JSONB, nullable; the options offered — null for free-text questions)
-- `answer` (JSONB; the response — string, array, boolean, etc., depending on the question)
+- `question_key` (TEXT, FK → `survey_questions.key`; stable identifier for
+  the question, e.g. `'learning_reasons'`)
+- `answer` (JSONB; the selected option key(s) — a string or string[] — or raw
+  text/JSON for free-response questions with no options)
 - `created_at` (TIMESTAMPTZ)
 - Indexed on `(user_id, question_key, created_at DESC)` to support latest-answer lookups.
 
-`answer` / `possible_answers` are JSONB (not TEXT) so one table can hold
-single-select, multi-select, and free-text answers without needing a separate
-table per question shape.
+`answer` is JSONB (not TEXT) so one table can hold single-select,
+multi-select, and free-text answers without needing a separate table per
+question shape. The question text and option labels themselves live in
+`survey_questions`/`survey_question_options` and are joined in when needed,
+rather than being duplicated onto every response row.
 
 **`UserResponse` model (`src/models/userResponse.ts`):**
 
-- `UserResponse.record({ userId, questionKey, question, possibleAnswers?, answer })` —
-  insert a new answer row (always an insert, never an update)
+- `UserResponse.record({ userId, questionKey, answer })` — insert a new
+  answer row (always an insert, never an update)
 - `UserResponse.latestAnswer(userId, questionKey)` — the most recent answer a
   user gave to one specific question, or `null` if never answered
 - `UserResponse.latestAnswers(userId)` — the most recent answer to every
   question the user has ever answered (one row per `question_key`)
 
-**Questions (`src/questions/`):** each question asked of the user (currently
-surfaced during onboarding) is a `Question` — `{ key, question, options }`,
-typed in `src/questions/types.ts` — defined in its own file:
+**Survey questions (`src/survey/`):** each question asked of the user
+(currently surfaced during onboarding) is a `SurveyQuestion` — `{ key,
+question, options }`, options typed as `SurveyQuestionOption` — typed in
+`src/survey/types.ts` and defined in its own file:
 
 - `skillAssessment.ts` — `SKILL_ASSESSMENT`, the "how does your language feel
   right now?" step. Options are worded more descriptively than a bare CEFR
-  label but each still carries a `level` (`A1`–`B2`) used to set
-  `users.preferred_level` and pick the story shown; the option's `label` is
+  label but each still carries a `value` (`A1`–`B2`) used to set
+  `users.preferred_level` and pick the story shown; the option's `id` is
   what's recorded as the `UserResponse` answer.
 - `learningReasons.ts` — `LEARNING_REASONS`, the multi-select "what's pulling
-  you toward this language?" step; the selected labels are recorded as an
-  array answer.
+  you toward this language?" step; the selected option ids are recorded as
+  an array answer.
+
+`src/survey/sync.ts` exports `syncSurveyQuestions()`, which keeps
+`survey_questions`/`survey_question_options` in step with these definitions
+(the source of truth): new questions/options are inserted, changed ones are
+updated (bumping `updated_at`), and unchanged ones are left alone. It runs
+once at app startup (`src/index.ts`, before `app.listen`), so a code change
+here takes effect on the next deploy/restart with no manual DB step.
 
 `routes/profile.ts`'s `POST /profile/onboarding` handler validates the
 submitted `skillAssessment` id and `reasons` ids against these option lists,
 then calls `UserResponse.record()` for each answered question (skippable —
-only recorded if actually answered). Adding a new onboarding question means
-adding a new `Question` file here, re-exporting it from `questions/index.ts`,
-and wiring it into that handler + the `onboarding.ejs` view. Import
-questions from the barrel (`../questions/index.js`) rather than each
-question's own file.
+only recorded if actually answered), recording each selected option's `id`.
+Adding a new onboarding question means adding a new `SurveyQuestion` file
+here, re-exporting it from `survey/index.ts` (and adding it to
+`ALL_SURVEY_QUESTIONS` so it gets synced), then wiring it into that handler +
+the `onboarding.ejs` view. Import survey questions from the barrel
+(`../survey/index.js`) rather than each question's own file.
 
 ### Authentication & Sessions
 
@@ -243,6 +277,9 @@ Thin entry point that wires the app together:
 - Inline page routes: `/` (home; async — reads the user's saved preferences and
   passes `isLoggedIn` + preselected language/level) and `/about`
 - 404 and 500 error-handling middleware
+- Before `app.listen`, awaits `syncSurveyQuestions()` (`src/survey/sync.ts`)
+  so `survey_questions`/`survey_question_options` are up to date before any
+  request can hit `POST /profile/onboarding`
 
 Route handlers themselves live in `src/routes/`:
 
