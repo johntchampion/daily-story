@@ -3,7 +3,7 @@ import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
 import { User } from '../models/user.js'
 import { UserResponse } from '../models/userResponse.js'
 import { requireAuth } from '../middleware/requireAuth.js'
-import { SKILL_ASSESSMENT, LEARNING_REASONS } from '../questions/index.js'
+import { SKILL_ASSESSMENT, LEARNING_REASONS } from '../survey/index.js'
 
 const router = Router()
 

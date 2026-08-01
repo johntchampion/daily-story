@@ -31,27 +31,28 @@ CREATE TRIGGER users_set_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION set_updated_at();
 
--- Questions asked of users (currently surfaced during onboarding). The code
--- in src/questions/ is the source of truth; src/questions/sync.ts keeps
--- these rows in step with it (insert new, update changed, leave the rest
--- alone) on every app startup.
-CREATE TABLE IF NOT EXISTS questions (
+-- Questions asked of users purely for analytics, sentiment, and feedback
+-- purposes (currently surfaced during onboarding) — not tied to any specific
+-- app feature. The code in src/survey/ is the source of truth;
+-- src/survey/sync.ts keeps these rows in step with it (insert new, update
+-- changed, leave the rest alone) on every app startup.
+CREATE TABLE IF NOT EXISTS survey_questions (
     key         TEXT        PRIMARY KEY,
     question    TEXT        NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-DROP TRIGGER IF EXISTS questions_set_updated_at ON questions;
-CREATE TRIGGER questions_set_updated_at
-    BEFORE UPDATE ON questions
+DROP TRIGGER IF EXISTS survey_questions_set_updated_at ON survey_questions;
+CREATE TRIGGER survey_questions_set_updated_at
+    BEFORE UPDATE ON survey_questions
     FOR EACH ROW
     EXECUTE FUNCTION set_updated_at();
 
--- The options offered for each question (QuestionOption in code).
-CREATE TABLE IF NOT EXISTS question_options (
+-- The options offered for each survey question (SurveyQuestionOption in code).
+CREATE TABLE IF NOT EXISTS survey_question_options (
     id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    question_key TEXT        NOT NULL REFERENCES questions(key) ON DELETE CASCADE,
+    question_key TEXT        NOT NULL REFERENCES survey_questions(key) ON DELETE CASCADE,
     option_key   TEXT        NOT NULL,
     label        TEXT        NOT NULL,
     description  TEXT,
@@ -61,9 +62,9 @@ CREATE TABLE IF NOT EXISTS question_options (
     UNIQUE (question_key, option_key)
 );
 
-DROP TRIGGER IF EXISTS question_options_set_updated_at ON question_options;
-CREATE TRIGGER question_options_set_updated_at
-    BEFORE UPDATE ON question_options
+DROP TRIGGER IF EXISTS survey_question_options_set_updated_at ON survey_question_options;
+CREATE TRIGGER survey_question_options_set_updated_at
+    BEFORE UPDATE ON survey_question_options
     FOR EACH ROW
     EXECUTE FUNCTION set_updated_at();
 
@@ -74,7 +75,7 @@ CREATE TRIGGER question_options_set_updated_at
 CREATE TABLE IF NOT EXISTS user_responses (
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id          BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    question_key     TEXT        NOT NULL REFERENCES questions(key),
+    question_key     TEXT        NOT NULL REFERENCES survey_questions(key),
     answer           JSONB       NOT NULL,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );

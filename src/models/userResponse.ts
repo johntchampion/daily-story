@@ -27,8 +27,8 @@ export class UserResponse {
 
   // Record a new answer. Always inserts — never updates a prior answer to the
   // same question, so answering again just adds another row to the history.
-  // `answer` holds the selected option key(s) (see question_options), or raw
-  // text/JSON for free-response questions with no options.
+  // `answer` holds the selected option key(s) (see survey_question_options),
+  // or raw text/JSON for free-response questions with no options.
   static async record(input: {
     userId: number
     questionKey: string

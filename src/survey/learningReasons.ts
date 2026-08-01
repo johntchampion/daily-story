@@ -1,8 +1,8 @@
-import { Question } from './types.js'
+import { SurveyQuestion } from './types.js'
 
 // Onboarding's "what's pulling you toward this language?" step. Multi-select;
 // recorded to user_responses as an array of the selected labels.
-export const LEARNING_REASONS: Question = {
+export const LEARNING_REASONS: SurveyQuestion = {
   key: 'learning_reasons',
   question: "What's pulling you toward this language?",
   options: [

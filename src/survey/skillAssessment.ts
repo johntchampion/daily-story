@@ -1,11 +1,11 @@
-import { Question } from './types.js'
+import { SurveyQuestion } from './types.js'
 
 // Onboarding's "how does your language feel right now?" step. Each option is
 // worded more descriptively than a bare CEFR label but still carries one of
 // the four levels the app actually generates content for as its `value`
 // (used to set users.preferred_level and pick which story to open). The
 // option's `id` is what gets recorded to user_responses as the answer.
-export const SKILL_ASSESSMENT: Question = {
+export const SKILL_ASSESSMENT: SurveyQuestion = {
   key: 'skill_self_assessment',
   question: 'How would you describe your current level?',
   options: [
