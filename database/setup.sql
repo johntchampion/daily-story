@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email           TEXT        NOT NULL UNIQUE,
     hashed_password TEXT        NOT NULL,
+    name            TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_logged_in  TIMESTAMPTZ,

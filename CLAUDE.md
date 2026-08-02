@@ -134,6 +134,7 @@ first initialized.
 - `id` (BIGINT identity, PK)
 - `email` (TEXT, unique; case-insensitive lookups via a `lower(email)` index)
 - `hashed_password` (TEXT, bcrypt with cost factor 12)
+- `name` (TEXT, nullable; collected at signup, not required)
 - `created_at`, `updated_at` (TIMESTAMPTZ; `updated_at` maintained by a trigger)
 - `last_logged_in` (TIMESTAMPTZ, nullable)
 - `preferred_language` (TEXT, nullable; canonical name e.g. `'Spanish'`)
@@ -141,8 +142,8 @@ first initialized.
 
 **`User` model (`src/models/user.ts`):**
 
-- `User.register({ email, password })` — hash password, validate/normalize email, persist
-- `User.create({ email, hashedPassword })` — persist a pre-hashed account
+- `User.register({ email, password, name? })` — hash password, validate/normalize email, persist
+- `User.create({ email, hashedPassword, name? })` — persist a pre-hashed account
 - `User.findById(id)` / `User.findByEmail(email)` — load (null if missing)
 - `user.verifyPassword(password)` — bcrypt compare
 - `user.recordLogin()` — stamp `last_logged_in`

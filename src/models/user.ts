@@ -27,6 +27,7 @@ type UserRow = {
   id: string
   email: string
   hashed_password: string
+  name: string | null
   created_at: Date
   updated_at: Date
   last_logged_in: Date | null
@@ -35,7 +36,7 @@ type UserRow = {
 }
 
 const COLUMNS =
-  'id, email, hashed_password, created_at, updated_at, last_logged_in, preferred_language, preferred_level'
+  'id, email, hashed_password, name, created_at, updated_at, last_logged_in, preferred_language, preferred_level'
 
 // An instantiable user account, mapped from the `users` table defined in
 // database/setup.sql. Create new accounts with `User.create()` and load
@@ -44,6 +45,7 @@ export class User {
   id: number
   email: string
   hashedPassword: string
+  name: string | null
   createdAt: Date
   updatedAt: Date
   lastLoggedIn: Date | null
@@ -54,6 +56,7 @@ export class User {
     this.id = Number(row.id)
     this.email = row.email
     this.hashedPassword = row.hashed_password
+    this.name = row.name
     this.createdAt = row.created_at
     this.updatedAt = row.updated_at
     this.lastLoggedIn = row.last_logged_in
@@ -68,13 +71,14 @@ export class User {
   static async create(input: {
     email: string
     hashedPassword: string
+    name?: string
   }): Promise<User> {
     const email = normalizeEmail(input.email)
     const { rows } = await pool.query<UserRow>(
-      `INSERT INTO users (email, hashed_password)
-       VALUES ($1, $2)
+      `INSERT INTO users (email, hashed_password, name)
+       VALUES ($1, $2, $3)
        RETURNING ${COLUMNS}`,
-      [email, input.hashedPassword],
+      [email, input.hashedPassword, input.name ?? null],
     )
     return new User(rows[0]!)
   }
@@ -84,12 +88,15 @@ export class User {
   static async register(input: {
     email: string
     password: string
+    name?: string
   }): Promise<User> {
     // Validate/normalize first so an invalid email fails before we spend the
     // cost of hashing. create() re-normalizes (idempotent) as the real gate.
     const email = normalizeEmail(input.email)
     const hashedPassword = await bcrypt.hash(input.password, SALT_ROUNDS)
-    return User.create({ email, hashedPassword })
+    return input.name !== undefined
+      ? User.create({ email, hashedPassword, name: input.name })
+      : User.create({ email, hashedPassword })
   }
 
   // Load an account by id. Returns null if not found.
@@ -117,18 +124,18 @@ export class User {
     return bcrypt.compare(password, this.hashedPassword)
   }
 
-  // Persist changes to `email` / `hashedPassword` made on this instance.
-  // The email is normalized and validated (throws on invalid format), so this
-  // path can't bypass the format rule enforced by create(). `updatedAt` is
-  // maintained by a DB trigger and refreshed locally.
+  // Persist changes to `email` / `hashedPassword` / `name` made on this
+  // instance. The email is normalized and validated (throws on invalid
+  // format), so this path can't bypass the format rule enforced by create().
+  // `updatedAt` is maintained by a DB trigger and refreshed locally.
   async save(): Promise<this> {
     const email = normalizeEmail(this.email)
     const { rows } = await pool.query<UserRow>(
       `UPDATE users
-       SET email = $1, hashed_password = $2
-       WHERE id = $3
+       SET email = $1, hashed_password = $2, name = $3
+       WHERE id = $4
        RETURNING ${COLUMNS}`,
-      [email, this.hashedPassword, this.id],
+      [email, this.hashedPassword, this.name, this.id],
     )
     if (!rows[0]) {
       throw new Error(`Cannot save user ${this.id}: account no longer exists`)
@@ -206,6 +213,7 @@ export class User {
     this.id = Number(row.id)
     this.email = row.email
     this.hashedPassword = row.hashed_password
+    this.name = row.name
     this.createdAt = row.created_at
     this.updatedAt = row.updated_at
     this.lastLoggedIn = row.last_logged_in

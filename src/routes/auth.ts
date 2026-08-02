@@ -18,6 +18,7 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
     const email = typeof req.body.email === 'string' ? req.body.email.trim() : ''
     const password =
       typeof req.body.password === 'string' ? req.body.password : ''
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : ''
 
     if (!email || !password) {
       return res
@@ -32,7 +33,7 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
         .render('signup', { error: 'An account with that email already exists', isLoggedIn: false })
     }
 
-    const user = await User.register({ email, password })
+    const user = await User.register({ email, password, name: name || undefined })
     req.session.userId = user.id
     // Send new accounts through onboarding to pick a language and level.
     res.redirect('/profile/onboarding')
