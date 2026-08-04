@@ -4,6 +4,7 @@ import express, { Request, Response } from 'express'
 import session from 'express-session'
 import { SUPPORTED_LANGUAGES, LEVELS } from './constants'
 import { User } from './models/user'
+import { buildDashboardViewModel } from './dashboardViewModel'
 import { syncSurveyQuestions } from './survey/sync'
 import authRoutes from './routes/auth'
 import utilRoutes from './routes/util'
@@ -44,31 +45,26 @@ app.use(utilRoutes)
 // Profile routes (onboarding, preferences) mounted under /profile
 app.use('/profile', profileRoutes)
 
-// Home page route
+// Home page route. Signed-in users get the dashboard ("Home v2"); logged-out
+// visitors get the marketing home page.
 app.get('/', async (req: Request, res: Response, next) => {
   try {
-    // Default to whatever the visitor last viewed (stored in the session).
-    let selectedLanguage = req.session.lastViewedLanguage ?? null
-    let selectedLevel = req.session.lastViewedLevel ?? null
-
-    // When signed in, a saved account preference takes precedence — but only
-    // if both parts are present; otherwise fall back to the last viewed pair.
+    // Signed in: load the account and render the dashboard.
     if (req.session.userId) {
       const user = await User.findById(req.session.userId)
-      if (user?.preferredLanguage) {
-        selectedLanguage = user.preferredLanguage.toLowerCase()
-      }
-      if (user?.preferredLevel) {
-        selectedLevel = user.preferredLevel.toLowerCase()
+      if (user) {
+        return res.render('dashboard', await buildDashboardViewModel(user))
       }
     }
 
+    // Logged out (or a stale session whose user no longer exists): the
+    // marketing home page. Preselect the visitor's last-viewed language/level.
     res.render('home', {
       languages: SUPPORTED_LANGUAGES,
       levels: LEVELS,
-      isLoggedIn: Boolean(req.session.userId),
-      preferredLanguage: selectedLanguage,
-      preferredLevel: selectedLevel,
+      isLoggedIn: false,
+      preferredLanguage: req.session.lastViewedLanguage ?? null,
+      preferredLevel: req.session.lastViewedLevel ?? null,
     })
   } catch (error) {
     next(error)

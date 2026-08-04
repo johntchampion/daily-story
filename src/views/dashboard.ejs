@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/icon.png" />
+    <title>Daily Story — Your reading dashboard</title>
+
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard" id="top">
+        <div class="grain" aria-hidden="true"></div>
+
+        <!-- ============ HEADER ============ -->
+        <header class="dash-header">
+            <a class="brand" href="/">
+                <span class="brand-dot"></span>
+                <span class="brand-name">Daily Story</span>
+            </a>
+            <nav class="dash-nav">
+                <!-- TODO: Progress & Account pages don't exist yet. -->
+                <a href="#">Progress</a>
+                <a href="#">Account</a>
+                <form action="/logout" method="post" class="nav-form">
+                    <button type="submit">Sign out</button>
+                </form>
+            </nav>
+        </header>
+
+        <main class="dash-main">
+
+            <!-- date + greeting -->
+            <div class="dash-dateline">
+                <span class="dash-dateline-text"><%= dateLine %></span>
+                <span class="dash-dateline-rule"></span>
+            </div>
+            <p class="dash-greeting"><%= greeting %></p>
+
+            <!-- ============ TODAY'S STORY — hero ============ -->
+            <div class="dash-hero-wrap">
+                <div class="dash-hero-shadow" aria-hidden="true"></div>
+                <div class="dash-hero">
+                    <div class="dash-hero-copy">
+                        <div class="dash-hero-tags">
+                            <span class="dash-hero-eyebrow">Today's story</span>
+                            <span class="dash-hero-badge"><%= story.badgeLabel %></span>
+                            <% if (story.hasStory) { %>
+                                <span class="dash-hero-meta">~5 min · 3 questions</span>
+                            <% } %>
+                        </div>
+                        <h1 class="dash-hero-title"><%= story.title %></h1>
+                        <% if (story.titleEn) { %>
+                            <p class="dash-hero-subtitle"><%= story.titleEn %></p>
+                        <% } %>
+                        <div class="dash-hero-actions">
+                            <a class="dash-hero-cta" href="<%= story.href %>"><%= story.ctaLabel %></a>
+                            <% if (story.hasPreference) { %>
+                                <button type="button" class="dash-hero-altlang" data-picker-toggle>Read in another language today</button>
+                            <% } %>
+                        </div>
+                        <% if (story.hasPreference) { %>
+                            <div class="dash-picker" data-picker hidden>
+                                <% pickerLangs.forEach(l => { %>
+                                    <a class="dash-chip<%= l.selected ? ' is-current' : '' %>" href="<%= l.href %>">
+                                        <span class="dash-chip-code"><%= l.code %></span><%= l.native %>
+                                    </a>
+                                <% }) %>
+                                <span class="dash-picker-note">Just for today — your usual stays <%= preferredLabel %>.</span>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- streak column (placeholder data) -->
+                    <div class="dash-streak">
+                        <div class="dash-streak-num"><%= streak %></div>
+                        <div class="dash-streak-label">day streak</div>
+                        <div class="dash-streak-note"><%= streakNote %></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ SECOND ROW: rhythm + quiz metric + quick exercise ============ -->
+            <div class="dash-stats">
+
+                <!-- last 7 days (placeholder data) -->
+                <div class="dash-card dash-card--panel">
+                    <div class="dash-card-label">Last 7 days</div>
+                    <div class="dash-metric">
+                        <span class="dash-metric-num"><%= daysRead7 %></span>
+                        <span class="dash-metric-unit">of 7 days read</span>
+                    </div>
+                    <div class="dash-week">
+                        <% week.forEach(d => { %>
+                            <span class="dash-week-day">
+                                <span class="dash-week-mark<%= d.read ? ' is-read' : (d.isToday ? ' is-today' : '') %>"><%= d.read ? '✓' : (d.isToday ? '·' : '—') %></span>
+                                <span class="dash-week-label"><%= d.label %></span>
+                            </span>
+                        <% }) %>
+                    </div>
+                    <a class="dash-card-link" href="#">See full progress →</a>
+                </div>
+
+                <!-- quiz scores (placeholder data) -->
+                <div class="dash-card dash-card--panel">
+                    <div class="dash-card-label">Quizzes this week</div>
+                    <div class="dash-metric">
+                        <span class="dash-metric-num"><%= quizPct %></span>
+                        <span class="dash-metric-unit"><%= quizFraction %> correct</span>
+                    </div>
+                    <div class="dash-quizlist">
+                        <% recentQuizzes.forEach(q => { %>
+                            <div class="dash-quizrow">
+                                <span class="dash-quizrow-score<%= q.good ? ' is-good' : '' %>"><%= q.score %></span>
+                                <span class="dash-quizrow-title"><%= q.title %></span>
+                            </div>
+                        <% }) %>
+                    </div>
+                    <div class="dash-card-note"><%= quizNote %></div>
+                </div>
+
+                <!-- quick exercise (interactive; placeholder content) -->
+                <div class="dash-card dash-card--raise dash-exercise" data-exercise>
+                    <div class="dash-exercise-head">
+                        <span class="dash-card-label dash-card-label--accent">30-second refresher</span>
+                        <span class="dash-exercise-source" data-ex-source></span>
+                    </div>
+                    <p class="dash-exercise-q">What does <span class="dash-exercise-word" data-ex-word></span> mean?</p>
+                    <div class="dash-exercise-options" data-ex-options></div>
+                    <div class="dash-exercise-foot">
+                        <span class="dash-exercise-feedback" data-ex-feedback></span>
+                        <button type="button" class="dash-exercise-next" data-ex-next hidden>Another →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PREVIOUS STORIES (placeholder data) ============ -->
+            <div class="dash-past">
+                <div class="dash-past-head">
+                    <span class="dash-card-label">Previous stories</span>
+                    <a class="dash-card-link" href="#">All stories →</a>
+                </div>
+                <div class="dash-past-grid">
+                    <% pastStories.forEach(p => { %>
+                        <a class="dash-past-card" href="<%= p.href %>">
+                            <span class="dash-past-date"><%= p.date %></span>
+                            <span class="dash-past-title"><%= p.title %></span>
+                            <span class="dash-past-meta"><%= p.meta %></span>
+                        </a>
+                    <% }) %>
+                </div>
+            </div>
+        </main>
+
+        <footer class="dash-footer">
+            A fresh story arrives every morning — written by Claude, just for you.
+        </footer>
+    </div>
+
+    <!-- Placeholder vocab data for the 30-second refresher. Escaped so a stray
+         "</script>" in content can't break out of the tag. -->
+    <script id="dash-exercise-data" type="application/json"><%- JSON.stringify(exercise).replace(/</g, '\\u003c') %></script>
+
+    <script>
+        (function () {
+            // ---- "Read in another language today" picker toggle -------------
+            const toggle = document.querySelector('[data-picker-toggle]');
+            const picker = document.querySelector('[data-picker]');
+            if (toggle && picker) {
+                toggle.addEventListener('click', function () {
+                    picker.hidden = !picker.hidden;
+                });
+                // Reselecting the preferred language (the current chip) just
+                // collapses the list — there's nothing to switch to.
+                const current = picker.querySelector('.dash-chip.is-current');
+                if (current) {
+                    current.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        picker.hidden = true;
+                    });
+                }
+            }
+
+            // ---- 30-second refresher: pick an answer, then "Another →" ------
+            const ex = document.querySelector('[data-exercise]');
+            const dataEl = document.getElementById('dash-exercise-data');
+            if (!ex || !dataEl) return;
+
+            let questions = [];
+            try { questions = JSON.parse(dataEl.textContent); } catch (e) { questions = []; }
+            if (!questions.length) return;
+
+            const sourceEl = ex.querySelector('[data-ex-source]');
+            const wordEl = ex.querySelector('[data-ex-word]');
+            const optionsEl = ex.querySelector('[data-ex-options]');
+            const feedbackEl = ex.querySelector('[data-ex-feedback]');
+            const nextBtn = ex.querySelector('[data-ex-next]');
+
+            const state = { idx: 0, chosen: null };
+
+            function esc(s) {
+                return String(s).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
+            function render() {
+                const q = questions[state.idx % questions.length];
+                const answered = state.chosen !== null;
+
+                sourceEl.textContent = 'from "' + q.source + '"';
+                wordEl.textContent = q.word;
+
+                optionsEl.innerHTML = q.options.map(function (label, i) {
+                    let cls = 'dash-opt';
+                    let mark = '';
+                    if (answered) {
+                        if (i === q.correct) { cls += ' is-correct'; mark = '✓'; }
+                        else if (i === state.chosen) { cls += ' is-wrong'; mark = '✕'; }
+                        else { cls += ' is-dim'; }
+                    }
+                    return '<button type="button" class="' + cls + '" data-opt="' + i + '"' +
+                        (answered ? ' disabled' : '') + '>' +
+                        '<span class="dash-opt-mark">' + mark + '</span>' +
+                        '<span class="dash-opt-label">' + esc(label) + '</span></button>';
+                }).join('');
+
+                if (!answered) {
+                    feedbackEl.textContent = 'One word a day adds up.';
+                    feedbackEl.className = 'dash-exercise-feedback';
+                    nextBtn.hidden = true;
+                } else {
+                    const gotIt = state.chosen === q.correct;
+                    feedbackEl.textContent = gotIt
+                        ? 'Genau! Nicely remembered.'
+                        : 'Close — it means "' + q.options[q.correct] + '".';
+                    feedbackEl.className = 'dash-exercise-feedback ' + (gotIt ? 'is-correct' : 'is-wrong');
+                    nextBtn.hidden = false;
+                }
+            }
+
+            optionsEl.addEventListener('click', function (e) {
+                const btn = e.target.closest('[data-opt]');
+                if (btn && state.chosen === null) {
+                    state.chosen = parseInt(btn.getAttribute('data-opt'), 10);
+                    render();
+                }
+            });
+
+            nextBtn.addEventListener('click', function () {
+                state.idx = (state.idx + 1) % questions.length;
+                state.chosen = null;
+                render();
+            });
+
+            render();
+        })();
+    </script>
+</body>
+</html>
