@@ -3,6 +3,8 @@ import path from 'path'
 import { readFile } from 'fs/promises'
 import { StoryContent } from '../storyService.js'
 import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
+import { UserStoryActivity } from '../models/userStoryActivity.js'
+import { signStoryDate, verifyStoryDate } from '../storyDateToken.js'
 
 const router = Router()
 
@@ -18,7 +20,7 @@ router.get(
       const normalizedLevel = level?.toUpperCase() || ''
 
       const isValidLanguage = SUPPORTED_LANGUAGES.some(
-        (lang) => lang.toLowerCase() === normalizedLanguage
+        (lang) => lang.toLowerCase() === normalizedLanguage,
       )
       const allLevels = LEVELS
       const isValidLevel = allLevels.some((lvl) => lvl === normalizedLevel)
@@ -63,7 +65,7 @@ router.get(
         day,
         normalizedLanguage,
         normalizedLevel.toLowerCase(),
-        'story.json'
+        'story.json',
       )
 
       let content: StoryContent
@@ -87,10 +89,35 @@ router.get(
             month: 'long',
             day: 'numeric',
           }),
-          dateISO: now.toISOString().split('T')[0],
+          dateISO: `${year}-${month}-${day}`,
           isLoggedIn: Boolean(req.session.userId),
         })
         return
+      }
+
+      const matchedLanguage = SUPPORTED_LANGUAGES.find(
+        (lang) => lang.toLowerCase() === normalizedLanguage,
+      )!
+      const matchedLevel = allLevels.find((lvl) => lvl === normalizedLevel)!
+      const dateISO = `${year}-${month}-${day}`
+      const storyDateToken = req.session.userId
+        ? signStoryDate(
+            req.session.userId,
+            matchedLanguage,
+            matchedLevel,
+            dateISO,
+          )
+        : null
+
+      if (req.session.userId) {
+        UserStoryActivity.recordVisit({
+          userId: req.session.userId,
+          date: dateISO,
+          language: matchedLanguage,
+          level: matchedLevel,
+        }).catch((error) =>
+          console.error('Failed to record story visit:', error),
+        )
       }
 
       // Load stories for all other levels within the same language
@@ -112,7 +139,7 @@ router.get(
           day,
           normalizedLanguage,
           otherLevel.toLowerCase(),
-          'story.json'
+          'story.json',
         )
 
         try {
@@ -135,24 +162,92 @@ router.get(
         story: content.story,
         messages: content.messages,
         questions: content.questions,
-        language:
-          normalizedLanguage.charAt(0).toUpperCase() +
-          normalizedLanguage.slice(1),
-        level: normalizedLevel,
+        language: matchedLanguage,
+        level: matchedLevel,
         date: now.toLocaleDateString(undefined, {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
           day: 'numeric',
         }),
-        dateISO: now.toISOString().split('T')[0],
+        dateISO,
+        storyDateToken,
         otherLevels,
         isLoggedIn: Boolean(req.session.userId),
       })
     } catch (error) {
       next(error)
     }
-  }
+  },
+)
+
+// Record a piece of user story activity.
+router.post(
+  '/record-activity',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.session.userId) {
+        res.status(204).end()
+        return
+      }
+
+      const { language, level, date, storyToken, correct, incorrect } =
+        req.body ?? {}
+      const normalizedLanguage =
+        typeof language === 'string' ? language.toLowerCase() : ''
+      const normalizedLevel =
+        typeof level === 'string' ? level.toUpperCase() : ''
+
+      const matchedLanguage = SUPPORTED_LANGUAGES.find(
+        (lang) => lang.toLowerCase() === normalizedLanguage,
+      )
+      const matchedLevel = LEVELS.find((lvl) => lvl === normalizedLevel)
+
+      if (!matchedLanguage || !matchedLevel) {
+        res.status(400).end()
+        return
+      }
+
+      const isValidDate =
+        typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+
+      if (
+        !isValidDate ||
+        typeof storyToken !== 'string' ||
+        !verifyStoryDate(
+          req.session.userId,
+          matchedLanguage,
+          matchedLevel,
+          date,
+          storyToken,
+        )
+      ) {
+        res.status(400).end()
+        return
+      }
+
+      const isValidCount = (n: unknown): n is number =>
+        typeof n === 'number' && Number.isInteger(n) && n >= 0
+
+      if (!isValidCount(correct) || !isValidCount(incorrect)) {
+        res.status(400).end()
+        return
+      }
+
+      await UserStoryActivity.recordAttempt({
+        userId: req.session.userId,
+        date,
+        language: matchedLanguage,
+        level: matchedLevel,
+        correctCount: correct,
+        incorrectCount: incorrect,
+      })
+
+      res.status(204).end()
+    } catch (error) {
+      next(error)
+    }
+  },
 )
 
 export default router

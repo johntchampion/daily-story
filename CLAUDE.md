@@ -16,7 +16,7 @@
 - **AI Provider:** Anthropic AI SDK 0.68.0 (Claude Sonnet 4.5)
 - **Storage:**
   - Stories: file-based JSON (organized by date)
-  - User accounts & responses: PostgreSQL 18 (via `pg`)
+  - User accounts, responses & activity: PostgreSQL 18 (via `pg`)
 - **Auth:** `express-session` (cookie sessions) + `bcrypt` (password hashing)
 - **Build Tools:** TypeScript, tsx, nodemon, copyfiles
 - **Containerization:** Docker + Docker Compose (app + Postgres)
@@ -30,9 +30,11 @@ src/
 ├── constants.ts       # SUPPORTED_LANGUAGES / LEVELS + Language / Level types
 ├── themes.ts          # Theme arrays for each proficiency level
 ├── db.ts              # Shared Postgres connection pool (via DATABASE_URL)
+├── storyDateToken.ts  # Signs/verifies the (userId, language, level, date) token used by /record-activity
 ├── models/
 │   ├── user.ts        # User model (CRUD, bcrypt hashing, preferences)
-│   └── userResponse.ts # UserResponse model (append-only sentiment/feedback answers)
+│   ├── userResponse.ts # UserResponse model (append-only sentiment/feedback answers)
+│   └── userStoryActivity.ts # UserStoryActivity model (daily quiz usage metrics, upserted)
 ├── survey/
 │   ├── types.ts        # SurveyQuestion / SurveyQuestionOption type definitions
 │   ├── skillAssessment.ts  # Onboarding skill self-assessment SurveyQuestion
@@ -244,6 +246,95 @@ here, re-exporting it from `survey/index.ts` (and adding it to
 the `onboarding.ejs` view. Import survey questions from the barrel
 (`../survey/index.js`) rather than each question's own file.
 
+### User Story Activity (usage metrics)
+
+`user_story_activity` tracks how a logged-in user actually engages with
+stories day to day — one row per user per day per (language, level) they
+visited (whether or not they touched the quiz): `id`, `user_id` (FK →
+`users.id`, `ON DELETE CASCADE`), `story_date` (DATE), `language` /
+`level` (TEXT, canonical forms — e.g. `'Spanish'` / `'A1'`, matching
+`users.preferred_language` / `preferred_level`), `correct_count` /
+`incorrect_count` (INTEGER, default `0`), `created_at`/`updated_at`
+(TIMESTAMPTZ; `updated_at` maintained by a trigger). Unique on `(user_id,
+story_date, language, level)`.
+
+Unlike `user_responses`, this table is **not** append-only: re-attempting the
+same day's quiz (e.g. after reloading the page) **overwrites** the stored
+counts rather than adding a new row, so a row always reflects only the
+user's latest attempt for that day/language/level.
+
+**`UserStoryActivity` model (`src/models/userStoryActivity.ts`):**
+
+- `UserStoryActivity.recordAttempt({ userId, date, language, level, correctCount, incorrectCount })`
+  — upserts the row for that user/day/language/level (`ON CONFLICT ... DO
+  UPDATE`), replacing the counts.
+- `UserStoryActivity.recordVisit({ userId, date, language, level })` —
+  inserts a bare row (counts default to `0`) if one doesn't already exist for
+  that user/day/language/level (`ON CONFLICT ... DO NOTHING`). Never
+  overwrites counts a quiz attempt may have already recorded for the day.
+- Both take `date` as a plain `YYYY-MM-DD` string, not a JS `Date` — it's
+  written straight into the `story_date` column as-is. This avoids
+  constructing a `Date` (which `pg` would then re-serialize using the
+  server's *local* timezone) from a string that was itself derived from a
+  different calendar; see below for why that distinction matters here.
+
+Two callers write to this table:
+
+- `routes/story.ts`'s `GET /:language/:level` handler calls `recordVisit()`
+  server-side, fire-and-forget, the moment a story is successfully loaded for
+  a logged-in user — so a row exists for the day even if the reader never
+  touches the quiz.
+- `routes/story.ts`'s `POST /record-activity` handler calls `recordAttempt()`
+  and is the only caller of that method. The endpoint is intentionally
+  general — meant to record any meaningful user story activity, not just quiz
+  scores — so every detail of the activity (`language`, `level`, `date`, and
+  the activity-specific fields like `correct`/`incorrect`) is read from the
+  JSON body rather than the URL. The quiz in `views/story.ejs` is still
+  evaluated entirely client-side (see "Changing Quiz Behavior" below); after
+  every answered question, its embedded script fires a best-effort `fetch()`
+  to this endpoint with the running `{ language, level, date, storyToken,
+  correct, incorrect }` tally for the questions answered so far in that pageview (see
+  `reportProgress()` in `story.ejs`).
+
+**`story_date` vs. `created_at`:** `story_date` is *which story the activity
+belongs to*, not when the row was written. It's fixed the moment the page is
+rendered (the same date used to pick the `stories/{date}/...` file), which
+matters because the quiz is answered client-side, sometimes minutes later —
+a page opened just before midnight and answered just after must still count
+for the story's day, not the day the request happens to land on. Since a
+raw client-supplied date can't be trusted outright, `src/storyDateToken.ts`
+signs `(userId, language, level, date)` with an HMAC (keyed on
+`SESSION_SECRET`) when the `GET /:language/:level` page is rendered for a
+logged-in user; the value is embedded as `QUIZ_DATE`/`QUIZ_DATE_TOKEN` in
+`story.ejs` and echoed back on `POST /record-activity`, which rejects the
+request (`400`) unless `verifyStoryDate()` confirms the token matches the
+*session's* `userId` (never a client-supplied one) plus the submitted
+`language`/`level`/`date` — so a token can't be forged for an arbitrary date
+or replayed under a different account. `created_at` (DB-default `now()`,
+unaffected by any of this) is the real wall-clock write time, and is what
+streak/"was the user active today" logic should key off instead.
+
+`dateISO` (the value that gets signed and later written as `story_date`) is
+built from the same local-calendar components (`now.getFullYear()` /
+`getMonth()` / `getDate()`) used to locate the `stories/{date}/...` file —
+**not** `now.toISOString()`. The two disagree whenever the server's local day
+and the UTC day differ, which happens daily near local midnight for any
+non-UTC timezone; using the UTC-based value here previously caused the quiz's
+`recordAttempt()` row to land on a different `story_date` than the page's
+`recordVisit()` row, creating a duplicate row instead of updating the
+existing one.
+
+For both `recordAttempt()`/`recordVisit()` call sites:
+
+- Partial quiz attempts are captured — a user who abandons the quiz after one
+  question still leaves a row with `correct_count + incorrect_count === 1`.
+- `language`/`level` are always validated against
+  `SUPPORTED_LANGUAGES`/`LEVELS` (case-insensitive exact match, `400` on
+  anything else) before being used.
+- Anonymous visitors (no `req.session.userId`) are a silent no-op — there's
+  no account to attribute the activity to, and the client-side quiz still
+  works normally either way.
+
 ### Authentication & Sessions
 
 - Cookie-based sessions via `express-session` (configured in `src/index.ts`).
@@ -286,7 +377,8 @@ Route handlers themselves live in `src/routes/`:
 
 - `routes/util.ts` — `/generate-stories` (owns its `StoryGenerationService` instance)
 - `routes/profile.ts` — `/profile/onboarding` (GET/POST); guarded by `requireAuth`
-- `routes/story.ts` — `/:language/:level` story display + file loading
+- `routes/story.ts` — `/:language/:level` story display + file loading, plus
+  `/record-activity` for recording user story activity
 
 **Key Routes:**
 
@@ -301,7 +393,13 @@ Route handlers themselves live in `src/routes/`:
 - `POST /profile/onboarding` - Saves chosen language/level to the account
   (partial saves allowed), mirrors them into the session, then redirects to the
   matching story
-- `GET /:language/:level` - Display today's story
+- `GET /:language/:level` - Display today's story; also records a
+  `user_story_activity` visit row for logged-in users (fire-and-forget)
+- `POST /record-activity` - Records user story activity for the story's day
+  (verified via a signed token, not the request time); body carries
+  `{ language, level, date, storyToken, correct, incorrect }` for a quiz-progress
+  tally (the endpoint is general enough for other activity types later);
+  no-ops for anonymous visitors
 
 **Route Logic:**
 The `/generate-stories` endpoint follows a three-step process:
@@ -518,9 +616,12 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
   - B2: 126 advanced debate topics
 - All 8 languages at same level use the same theme on a given day
 - User accounts (email/password) store a preferred language/level (set during
-  onboarding) used to preselect the home page, but story content and progress
-  are not yet tied to accounts
-- Quiz results are client-side only (not persisted)
+  onboarding) used to preselect the home page; story content itself is not
+  tied to accounts (same story for everyone on a given day/language/level)
+- Quiz results are still evaluated client-side, but a per-day aggregate tally
+  (`correct_count`/`incorrect_count`) is now persisted per logged-in user via
+  `user_story_activity` — see "User Story Activity" above. Individual
+  question-level answers are not persisted, only the running tally
 
 ## Common Tasks
 
@@ -635,7 +736,8 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
 
 ## Future Enhancement Opportunities
 
-- Progress tracking tied to user accounts (accounts exist; content is not yet linked)
+- A dashboard/UI surfacing the daily usage metrics now stored in
+  `user_story_activity` (storage exists; nothing displays it yet)
 - Persistent session store (`connect-pg-simple`)
 - Audio pronunciation support
 - Vocabulary highlighting and definitions
