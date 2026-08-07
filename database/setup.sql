@@ -85,3 +85,31 @@ CREATE TABLE IF NOT EXISTS user_responses (
 -- every question for user Y" lookups.
 CREATE INDEX IF NOT EXISTS user_responses_user_question_idx
     ON user_responses (user_id, question_key, created_at DESC);
+
+-- Usage metrics: one row per user per day per (language, level) they read a
+-- story and answered quiz questions for. Unlike user_responses, this is NOT
+-- append-only — re-attempting the same day's quiz (e.g. after reloading the
+-- page) overwrites the counts in place, so the row always reflects only the
+-- latest attempt.
+CREATE TABLE IF NOT EXISTS user_story_activity (
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id         BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    story_date      DATE        NOT NULL,
+    language        TEXT        NOT NULL,
+    level           TEXT        NOT NULL,
+    correct_count   INTEGER     NOT NULL DEFAULT 0,
+    incorrect_count INTEGER     NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, story_date, language, level)
+);
+
+DROP TRIGGER IF EXISTS user_story_activity_set_updated_at ON user_story_activity;
+CREATE TRIGGER user_story_activity_set_updated_at
+    BEFORE UPDATE ON user_story_activity
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+
+-- Supports "this user's activity history, most recent day first" lookups.
+CREATE INDEX IF NOT EXISTS user_story_activity_user_date_idx
+    ON user_story_activity (user_id, story_date DESC);

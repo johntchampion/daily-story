@@ -216,6 +216,11 @@
         })();
 
         // ---- Quiz -------------------------------------------------------
+        const QUIZ_LANGUAGE = <%- JSON.stringify(language.toLowerCase()) %>;
+        const QUIZ_LEVEL = <%- JSON.stringify(level.toLowerCase()) %>;
+        const QUIZ_DATE = <%- JSON.stringify(dateISO) %>;
+        const QUIZ_DATE_TOKEN = <%- JSON.stringify(storyDateToken) %>;
+
         const SCORE_MESSAGES = {
             perfect: 'Perfect — you followed every turn. Come back tomorrow for a new story.',
             most: 'Nicely done. Re-read the lines you missed, then try tomorrow’s story.',
@@ -254,14 +259,15 @@
             const counter = document.getElementById('answeredCount');
             if (counter) counter.textContent = answered.length;
 
-            if (answered.length !== total || total === 0) return;
+            if (answered.length === 0) return;
 
-            // All answered — tally correct responses (a wrong pick leaves an
-            // '.incorrect' <li>; a right one does not).
             let correct = 0;
             answered.forEach(list => {
                 if (!list.querySelector('li.incorrect')) correct++;
             });
+            reportProgress(correct, answered.length - correct);
+
+            if (answered.length !== total) return;
 
             const scoreBox = document.getElementById('quizScore');
             const title = document.getElementById('quizScoreTitle');
@@ -277,6 +283,22 @@
             }
 
             if (correct === total) triggerPerfectScore();
+        }
+
+        function reportProgress(correct, incorrect) {
+            fetch('/record-activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    language: QUIZ_LANGUAGE,
+                    level: QUIZ_LEVEL,
+                    date: QUIZ_DATE,
+                    storyToken: QUIZ_DATE_TOKEN,
+                    correct: correct,
+                    incorrect: incorrect
+                }),
+                keepalive: true // keepalive lets the request finish even if the user navigates away right after the last answer.
+            }).catch(() => {});
         }
 
         function triggerPerfectScore() {
