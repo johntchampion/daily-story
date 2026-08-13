@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express'
-import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
+import { SUPPORTED_LANGUAGES, LEVELS } from '../config/constants.js'
 import { User } from '../models/user.js'
 import { UserResponse } from '../models/userResponse.js'
 import { requireAuth } from '../middleware/requireAuth.js'

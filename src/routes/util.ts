@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
-import { StoryGenerationService } from '../storyService.js'
-import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
+import { StoryGenerationService } from '../services/storyService.js'
+import { SUPPORTED_LANGUAGES, LEVELS } from '../config/constants.js'
 
 const router = Router()
 

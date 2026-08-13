@@ -1,5 +1,5 @@
-import { pool } from '../db.js'
-import { Language, Level } from '../constants.js'
+import { pool } from '../config/db.js'
+import { Language, Level } from '../config/constants.js'
 
 // Shape of a row as returned by Postgres (snake_case columns).
 type UserStoryActivityRow = {

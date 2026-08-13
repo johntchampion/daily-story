@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { mkdir, writeFile, access } from 'fs/promises'
 import path from 'path'
 import { A1_THEMES, A2_THEMES, B1_THEMES, B2_THEMES } from './themes.js'
-import { SUPPORTED_LANGUAGES, LEVELS } from './constants.js'
+import { SUPPORTED_LANGUAGES, LEVELS } from '../config/constants.js'
 
 export type StoryContent = {
   title: string

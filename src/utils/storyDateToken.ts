@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto'
-import { Language, Level } from './constants.js'
+import { Language, Level } from '../config/constants.js'
 
 const SECRET = process.env.SESSION_SECRET || 'dev-insecure-secret'
 

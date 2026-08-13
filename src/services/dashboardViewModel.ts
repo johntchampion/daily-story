@@ -1,12 +1,12 @@
 import path from 'path'
 import { readFile } from 'fs/promises'
 import { StoryContent } from './storyService.js'
-import { SUPPORTED_LANGUAGES } from './constants.js'
-import type { User } from './models/user.js'
+import { SUPPORTED_LANGUAGES } from '../config/constants.js'
+import type { User } from '../models/user.js'
 import {
   UserStoryActivity,
   type UserActivitySummary,
-} from './models/userStoryActivity.js'
+} from '../models/userStoryActivity.js'
 
 const NATIVE_NAMES: Record<string, string> = {
   English: 'English',

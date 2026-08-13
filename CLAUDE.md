@@ -26,11 +26,15 @@
 ```
 src/
 ├── index.ts           # Main Express app (routes, middleware, session setup)
-├── storyService.ts    # Story generation service (class-based)
-├── constants.ts       # SUPPORTED_LANGUAGES / LEVELS + Language / Level types
-├── themes.ts          # Theme arrays for each proficiency level
-├── db.ts              # Shared Postgres connection pool (via DATABASE_URL)
-├── storyDateToken.ts  # Signs/verifies the (userId, language, level, date) token used by /record-activity
+├── config/
+│   ├── constants.ts   # SUPPORTED_LANGUAGES / LEVELS + Language / Level types
+│   └── db.ts          # Shared Postgres connection pool (via DATABASE_URL)
+├── services/
+│   ├── storyService.ts       # Story generation service (class-based)
+│   ├── dashboardViewModel.ts # Builds the view model for the signed-in home dashboard
+│   └── themes.ts             # Theme arrays for each proficiency level
+├── utils/
+│   └── storyDateToken.ts # Signs/verifies the (userId, language, level, date) token used by /record-activity
 ├── models/
 │   ├── user.ts        # User model (CRUD, bcrypt hashing, preferences)
 │   ├── userResponse.ts # UserResponse model (append-only sentiment/feedback answers)
@@ -127,7 +131,7 @@ accounts and user responses (see below), not for stories or quiz results.
 ### User Accounts (PostgreSQL)
 
 User accounts are stored in PostgreSQL, accessed through a shared connection
-pool in `src/db.ts` (configured via `DATABASE_URL`). The schema lives in
+pool in `src/config/db.ts` (configured via `DATABASE_URL`). The schema lives in
 `database/setup.sql` and is applied automatically when the DB container is
 first initialized.
 
@@ -152,7 +156,7 @@ first initialized.
 - `user.updatePreferences({ language?, level? })` — partial update of the
   preferred language/level; only provided fields are written (empty object is a
   no-op). Params are typed with the `Language` / `Level` unions from
-  `src/constants.ts`.
+  `src/config/constants.ts`.
 - `user.save()` / `user.delete()` — update / remove
 
 Emails are normalized (trimmed + lowercased) and format-validated before any
@@ -302,7 +306,7 @@ rendered (the same date used to pick the `stories/{date}/...` file), which
 matters because the quiz is answered client-side, sometimes minutes later —
 a page opened just before midnight and answered just after must still count
 for the story's day, not the day the request happens to land on. Since a
-raw client-supplied date can't be trusted outright, `src/storyDateToken.ts`
+raw client-supplied date can't be trusted outright, `src/utils/storyDateToken.ts`
 signs `(userId, language, level, date)` with an HMAC (keyed on
 `SESSION_SECRET`) when the `GET /:language/:level` page is rendered for a
 logged-in user; the value is embedded as `QUIZ_DATE`/`QUIZ_DATE_TOKEN` in
@@ -408,7 +412,7 @@ The `/generate-stories` endpoint follows a three-step process:
 2. Check for in-progress batches (if found, inform user and return)
 3. Create new batches for missing dates (today/tomorrow)
 
-### src/storyService.ts (~500 lines)
+### src/services/storyService.ts (~500 lines)
 
 Core story generation service using class-based architecture:
 
@@ -425,12 +429,12 @@ Core story generation service using class-based architecture:
 **Important Constants:**
 
 - `SUPPORTED_LANGUAGES` (8 language names) and `LEVELS` (`['A1','A2','B1','B2']`)
-  live in `src/constants.ts`, declared `as const`. It also exports the derived
+  live in `src/config/constants.ts`, declared `as const`. It also exports the derived
   literal-union types `Language` and `Level`. storyService imports them from
   there (they are no longer defined in storyService itself).
 - `EARLY_LEVELS = ['A1', 'A2']`
 - `INTERMEDIATE_LEVELS = ['B1', 'B2']`
-- Theme arrays imported from `src/themes.ts` (each level has unique themes)
+- Theme arrays imported from `src/services/themes.ts` (each level has unique themes)
 
 **Theme System:**
 
@@ -457,7 +461,7 @@ Core story generation service using class-based architecture:
 **Key Architecture Change:**
 Now uses Anthropic's tool/function calling feature instead of parsing JSON from text responses. This eliminates the need for JSON cleaning and provides structured, validated output.
 
-### src/themes.ts (530 lines)
+### src/services/themes.ts (530 lines)
 
 Contains theme arrays for each proficiency level, organized from simple to complex:
 
@@ -627,14 +631,14 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
 
 ### Adding a New Language
 
-1. Add language to `SUPPORTED_LANGUAGES` in `src/constants.ts` (the `Language`
+1. Add language to `SUPPORTED_LANGUAGES` in `src/config/constants.ts` (the `Language`
    union updates automatically)
 2. AI prompts automatically support the new language (no changes needed)
 3. Rebuild and restart
 
 ### Adding New Themes
 
-1. Edit the appropriate theme array in `src/themes.ts`:
+1. Edit the appropriate theme array in `src/services/themes.ts`:
    - `A1_THEMES` for absolute beginner topics
    - `A2_THEMES` for elementary topics
    - `B1_THEMES` for intermediate topics
@@ -645,7 +649,7 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
 
 ### Adjusting Story Generation
 
-- Modify prompts in `getPrompt()` method in `src/storyService.ts`
+- Modify prompts in `getPrompt()` method in `src/services/storyService.ts`
 - Update tool schema in `getStoryTool()` method if changing story structure
 - Update word counts, content requirements, or question format in prompts
 - Consider impact on TypeScript `StoryContent` type
@@ -682,7 +686,7 @@ docker compose down -v      # Also remove volumes (wipes DB + stories data)
 **PostgreSQL for User Accounts:**
 
 - Added to support authentication (email/password) which file storage can't safely handle
-- Accessed via a single shared connection pool (`src/db.ts`)
+- Accessed via a single shared connection pool (`src/config/db.ts`)
 - Story content intentionally stays file-based; the DB is scoped to accounts
 
 **Async Batch Generation:**

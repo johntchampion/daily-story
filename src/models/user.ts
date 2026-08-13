@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
-import { pool } from '../db.js'
-import { Language, Level } from '../constants.js'
+import { pool } from '../config/db.js'
+import { Language, Level } from '../config/constants.js'
 
 // Cost factor for bcrypt hashing. Higher is slower / more resistant to
 // brute-force; 12 is a sensible modern default.

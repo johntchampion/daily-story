@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import path from 'path'
 import { readFile } from 'fs/promises'
-import { StoryContent } from '../storyService.js'
-import { SUPPORTED_LANGUAGES, LEVELS } from '../constants.js'
+import { StoryContent } from '../services/storyService.js'
+import { SUPPORTED_LANGUAGES, LEVELS } from '../config/constants.js'
 import { UserStoryActivity } from '../models/userStoryActivity.js'
-import { signStoryDate, verifyStoryDate } from '../storyDateToken.js'
+import { signStoryDate, verifyStoryDate } from '../utils/storyDateToken.js'
 
 const router = Router()
 

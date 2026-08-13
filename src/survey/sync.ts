@@ -1,4 +1,4 @@
-import { pool } from '../db.js'
+import { pool } from '../config/db.js'
 import { ALL_SURVEY_QUESTIONS } from './index.js'
 
 // Keeps the `survey_questions` / `survey_question_options` tables in step
