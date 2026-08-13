@@ -46,22 +46,22 @@
                     <div class="dash-hero-copy">
                         <div class="dash-hero-tags">
                             <span class="dash-hero-eyebrow">Today's story</span>
-                            <span class="dash-hero-badge"><%= story.badgeLabel %></span>
-                            <% if (story.hasStory) { %>
+                            <span class="dash-hero-badge"><%= dashboardStory.badgeLabel %></span>
+                            <% if (dashboardStory.hasStory) { %>
                                 <span class="dash-hero-meta">~5 min · 3 questions</span>
                             <% } %>
                         </div>
-                        <h1 class="dash-hero-title"><%= story.title %></h1>
-                        <% if (story.titleEn) { %>
-                            <p class="dash-hero-subtitle"><%= story.titleEn %></p>
+                        <h1 class="dash-hero-title"><%= dashboardStory.title %></h1>
+                        <% if (dashboardStory.titleEn) { %>
+                            <p class="dash-hero-subtitle"><%= dashboardStory.titleEn %></p>
                         <% } %>
                         <div class="dash-hero-actions">
-                            <a class="dash-hero-cta" href="<%= story.href %>"><%= story.ctaLabel %></a>
-                            <% if (story.hasPreference) { %>
+                            <a class="dash-hero-cta" href="<%= dashboardStory.href %>"><%= dashboardStory.ctaLabel %></a>
+                            <% if (dashboardStory.hasPreference) { %>
                                 <button type="button" class="dash-hero-altlang" data-picker-toggle>Read in another language today</button>
                             <% } %>
                         </div>
-                        <% if (story.hasPreference) { %>
+                        <% if (dashboardStory.hasPreference) { %>
                             <div class="dash-picker" data-picker hidden>
                                 <% pickerLangs.forEach(l => { %>
                                     <a class="dash-chip<%= l.selected ? ' is-current' : '' %>" href="<%= l.href %>">
@@ -108,7 +108,7 @@
                     <div class="dash-card-label">Quizzes this week</div>
                     <div class="dash-metric">
                         <span class="dash-metric-num"><%= quizPct %></span>
-                        <span class="dash-metric-unit"><%= quizFraction %> correct</span>
+                        <span class="dash-metric-unit"><%= quizFraction %></span>
                     </div>
                     <div class="dash-quizlist">
                         <% recentQuizzes.forEach(q => { %>

@@ -3,9 +3,11 @@ import { readFile } from 'fs/promises'
 import { StoryContent } from './storyService.js'
 import { SUPPORTED_LANGUAGES } from './constants.js'
 import type { User } from './models/user.js'
+import {
+  UserStoryActivity,
+  type UserActivitySummary,
+} from './models/userStoryActivity.js'
 
-// Native language names for the "read in another language today" picker,
-// mirroring the map used on the marketing home page (views/home.ejs).
 const NATIVE_NAMES: Record<string, string> = {
   English: 'English',
   Spanish: 'Español',
@@ -17,7 +19,6 @@ const NATIVE_NAMES: Record<string, string> = {
   Japanese: '日本語',
 }
 
-// Short two-letter codes shown on the language chips (e.g. "DE" for German).
 const LANG_CODES: Record<string, string> = {
   English: 'EN',
   Spanish: 'ES',
@@ -29,7 +30,6 @@ const LANG_CODES: Record<string, string> = {
   Japanese: 'JA',
 }
 
-// Plain-language level names (matches the levelInfo map in views/home.ejs).
 const LEVEL_NAMES: Record<string, string> = {
   A1: 'Beginner',
   A2: 'Conversational',
@@ -78,12 +78,9 @@ export type DashboardViewModel = {
   isLoggedIn: true
   greeting: string
   dateLine: string
-  story: DashboardStory
+  dashboardStory: DashboardStory
   preferredLabel: string
   pickerLangs: PickerLang[]
-  // --- Progress widgets below are static placeholders for now. There is no
-  // per-user reading/quiz history in the backend yet (see CLAUDE.md); wiring
-  // these to real data is future work. ---
   streak: number
   streakNote: string
   week: WeekDay[]
@@ -92,20 +89,19 @@ export type DashboardViewModel = {
   quizFraction: string
   recentQuizzes: RecentQuiz[]
   quizNote: string
+  // --- Static placeholder: no vocab data exists anywhere in StoryContent
+  // (see CLAUDE.md's Story Schema), so this can't be wired to real data
+  // without a story-generation/schema change. ---
   exercise: ExerciseQuestion[]
   pastStories: PastStory[]
 }
 
-// Load today's generated story for a language/level, or null if there isn't
-// one on disk. Mirrors the date-based path building in routes/story.ts.
-async function loadTodaysStory(
-  languageLower: string,
-  levelLower: string,
+async function loadStoryForDate(
+  dateISO: string,
+  language: string,
+  level: string,
 ): Promise<StoryContent | null> {
-  const now = new Date()
-  const year = now.getFullYear().toString()
-  const month = (now.getMonth() + 1).toString().padStart(2, '0')
-  const day = now.getDate().toString().padStart(2, '0')
+  const [year, month, day] = dateISO.split('-') as [string, string, string]
 
   const filePath = path.join(
     process.cwd(),
@@ -113,8 +109,8 @@ async function loadTodaysStory(
     year,
     month,
     day,
-    languageLower,
-    levelLower,
+    language.toLowerCase(),
+    level.toLowerCase(),
     'story.json',
   )
 
@@ -126,6 +122,26 @@ async function loadTodaysStory(
   }
 }
 
+// "Mon · Jul 6" style label for a plain YYYY-MM-DD date
+function formatDayLabel(dateISO: string): string {
+  const date = new Date(`${dateISO}T00:00:00Z`)
+  const weekday = date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    timeZone: 'UTC',
+  })
+  const monthDay = date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+  return `${weekday} · ${monthDay}`
+}
+
+async function titleForStory(row: UserStoryActivity): Promise<string> {
+  const content = await loadStoryForDate(row.storyDate, row.language, row.level)
+  return content?.title ?? `${row.language} ${row.level} story`
+}
+
 function timeOfDayGreeting(): string {
   const hour = new Date().getHours()
   if (hour < 12) return 'Good morning'
@@ -133,85 +149,38 @@ function timeOfDayGreeting(): string {
   return 'Good evening'
 }
 
-// The last 7 calendar-day labels ending today (real dates), paired with
-// placeholder "read" flags. Labels are real; the flags are not yet tracked.
-function buildWeek(): WeekDay[] {
-  const placeholderRead = [true, true, false, true, true, true, false]
-  const days: WeekDay[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const isToday = i === 0
-    days.push({
-      label: isToday
-        ? 'Today'
-        : d.toLocaleDateString(undefined, { weekday: 'short' }),
-      read: placeholderRead[6 - i] ?? false,
-      isToday,
-    })
-  }
-  return days
+function computeTodayISO(now: Date): string {
+  return `${now.getFullYear()}-${(now.getMonth() + 1)
+    .toString()
+    .padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
 }
 
-export async function buildDashboardViewModel(
-  user: User,
-): Promise<DashboardViewModel> {
-  const now = new Date()
-
-  // Issue number for flavor: the day-of-year, so it's stable per date.
+// Issue number for flavor: the day-of-year, so it's stable per date.
+function computeDateLine(now: Date): string {
   const startOfYear = new Date(now.getFullYear(), 0, 0)
   const dayOfYear = Math.floor(
     (now.getTime() - startOfYear.getTime()) / 86_400_000,
   )
-  const dateLine = `${now.toLocaleDateString(undefined, {
+  return `${now.toLocaleDateString(undefined, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })} · No. ${dayOfYear}`
+}
 
-  const name = user.name
-  const greeting = name
-    ? `${timeOfDayGreeting()}, ${name}.`
-    : `${timeOfDayGreeting()}.`
+function computeGreeting(name: string | null): string {
+  return name ? `${timeOfDayGreeting()}, ${name}.` : `${timeOfDayGreeting()}.`
+}
 
-  // --- Today's story hero (real data where available) ---
-  const preferredLanguage = user.preferredLanguage // canonical, e.g. "German"
-  const preferredLevel = user.preferredLevel // CEFR, e.g. "B1"
-  const hasPreference = Boolean(preferredLanguage && preferredLevel)
-
-  let story: DashboardStory
-  if (hasPreference && preferredLanguage && preferredLevel) {
-    const langLower = preferredLanguage.toLowerCase()
-    const levelLower = preferredLevel.toLowerCase()
-    const content = await loadTodaysStory(langLower, levelLower)
-    const levelName = LEVEL_NAMES[preferredLevel] ?? preferredLevel
-    const badgeLabel = `${NATIVE_NAMES[preferredLanguage] ?? preferredLanguage} · ${preferredLevel}`
-    if (content) {
-      story = {
-        hasStory: true,
-        hasPreference: true,
-        title: content.title,
-        titleEn: content.titleEn ?? null,
-        href: `/${langLower}/${levelLower}`,
-        ctaLabel: "Read today's story →",
-        badgeLabel,
-      }
-    } else {
-      // Preference set, but no story generated for today yet.
-      story = {
-        hasStory: false,
-        hasPreference: true,
-        title: "Today's story is on its way",
-        titleEn: `${levelName} ${preferredLanguage}`,
-        href: `/${langLower}/${levelLower}`,
-        ctaLabel: 'Check for today’s story →',
-        badgeLabel,
-      }
-    }
-  } else {
+async function buildStory(
+  preferredLanguage: string | null,
+  preferredLevel: string | null,
+  todayISO: string,
+): Promise<DashboardStory> {
+  if (!preferredLanguage || !preferredLevel) {
     // No saved preference — send them to onboarding to choose.
-    story = {
+    return {
       hasStory: false,
       hasPreference: false,
       title: 'Choose your language to begin',
@@ -222,31 +191,141 @@ export async function buildDashboardViewModel(
     }
   }
 
-  // "Read in another language today" chips. Each links to today's story in that
-  // language at the user's current level (falls back to A1 if no level set).
+  const langLower = preferredLanguage.toLowerCase()
+  const levelLower = preferredLevel.toLowerCase()
+  const content = await loadStoryForDate(todayISO, langLower, levelLower)
+  const badgeLabel = `${NATIVE_NAMES[preferredLanguage] ?? preferredLanguage} · ${preferredLevel}`
+
+  if (content) {
+    return {
+      hasStory: true,
+      hasPreference: true,
+      title: content.title,
+      titleEn: content.titleEn ?? null,
+      href: `/${langLower}/${levelLower}`,
+      ctaLabel: "Read today's story →",
+      badgeLabel,
+    }
+  }
+
+  // Preference set, but no story generated for today yet.
+  const levelName = LEVEL_NAMES[preferredLevel] ?? preferredLevel
+  return {
+    hasStory: false,
+    hasPreference: true,
+    title: "Today's story is on its way",
+    titleEn: `${levelName} ${preferredLanguage}`,
+    href: `/${langLower}/${levelLower}`,
+    ctaLabel: 'Check for today’s story →',
+    badgeLabel,
+  }
+}
+
+function buildPickerLangs(
+  preferredLanguage: string | null,
+  preferredLevel: string | null,
+): PickerLang[] {
   const levelForLinks = (preferredLevel ?? 'A1').toLowerCase()
-  const pickerLangs: PickerLang[] = SUPPORTED_LANGUAGES.map((lang) => ({
+  return SUPPORTED_LANGUAGES.map((lang) => ({
     code: LANG_CODES[lang] ?? lang.slice(0, 2).toUpperCase(),
     native: NATIVE_NAMES[lang] ?? lang,
     href: `/${lang.toLowerCase()}/${levelForLinks}`,
     selected: preferredLanguage === lang,
   }))
+}
 
-  const preferredLabel = hasPreference
-    ? `${NATIVE_NAMES[preferredLanguage!] ?? preferredLanguage} · ${preferredLevel}`
-    : 'not set'
+function computePreferredLabel(
+  preferredLanguage: string | null,
+  preferredLevel: string | null,
+): string {
+  if (!preferredLanguage || !preferredLevel) return 'not set'
+  return `${NATIVE_NAMES[preferredLanguage] ?? preferredLanguage} · ${preferredLevel}`
+}
 
-  // --- Placeholder progress widgets (no backend tracking yet) ---
-  const week = buildWeek()
-  const daysRead7 = week.filter((d) => d.read).length
+function buildWeek(
+  weekActivity: UserActivitySummary['week'],
+  todayISO: string,
+): WeekDay[] {
+  return weekActivity.map(({ date, read }) => {
+    const isToday = date === todayISO
+    return {
+      label: isToday
+        ? 'Today'
+        : new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, {
+            weekday: 'short',
+            timeZone: 'UTC',
+          }),
+      read,
+      isToday,
+    }
+  })
+}
 
-  const recentQuizzes: RecentQuiz[] = [
-    { score: '3/3', title: 'Ein Gespräch über Berufswechsel', good: true },
-    { score: '2/3', title: 'Der Markt am Sonntag', good: false },
-    { score: '3/3', title: 'Das alte Fotoalbum', good: true },
-  ]
+function computeDaysRead7(week: WeekDay[]): number {
+  return week.filter((d) => d.read).length
+}
 
-  const exercise: ExerciseQuestion[] = [
+function computeStreakNote(streak: number, readToday: boolean): string {
+  if (streak === 0) return 'Start your streak today.'
+  return readToday
+    ? 'Nice work — keep it going tomorrow.'
+    : 'Read today to keep it alive.'
+}
+
+function computeQuizPct(quizStats: UserActivitySummary['quizStats']): string {
+  return quizStats.percentCorrect !== null
+    ? `${quizStats.percentCorrect}%`
+    : '—'
+}
+
+function computeQuizFraction(
+  quizStats: UserActivitySummary['quizStats'],
+): string {
+  if (quizStats.percentCorrect === null) return 'No quizzes yet this week'
+  const total = quizStats.correctCount + quizStats.incorrectCount
+  return `· ${quizStats.correctCount} of ${total} correct`
+}
+
+function computeQuizNote(quizStats: UserActivitySummary['quizStats']): string {
+  if (quizStats.attemptDays === 0) return 'Answer a quiz today to get started.'
+  const plural = quizStats.attemptDays === 1 ? '' : 'zes'
+  return `${quizStats.attemptDays} quiz${plural} this week.`
+}
+
+async function buildRecentQuizzes(
+  recentAttempts: UserStoryActivity[],
+): Promise<RecentQuiz[]> {
+  return Promise.all(
+    recentAttempts.map(async (row) => ({
+      score: `${row.correctCount}/${row.correctCount + row.incorrectCount}`,
+      title: await titleForStory(row),
+      good: row.incorrectCount === 0 && row.correctCount > 0,
+    })),
+  )
+}
+
+async function buildPastStories(
+  recentDays: UserStoryActivity[],
+  storyHref: string,
+): Promise<PastStory[]> {
+  return Promise.all(
+    recentDays.map(async (row) => {
+      const total = row.correctCount + row.incorrectCount
+      return {
+        date: formatDayLabel(row.storyDate),
+        title: await titleForStory(row),
+        meta: total > 0 ? `Read · quiz ${row.correctCount}/${total}` : 'Read',
+        href: storyHref,
+      }
+    }),
+  )
+}
+
+// Static placeholder: no vocab data exists anywhere in StoryContent (see
+// CLAUDE.md's Story Schema), so this can't be wired to real data without a
+// story-generation/schema change.
+function buildExercise(): ExerciseQuestion[] {
+  return [
     {
       word: 'der Umzug',
       source: 'Ein Gespräch über Berufswechsel',
@@ -266,43 +345,60 @@ export async function buildDashboardViewModel(
       correct: 2,
     },
   ]
+}
 
-  const pastStories: PastStory[] = [
-    {
-      date: 'Mon · Jul 6',
-      title: 'Ein Gespräch über Berufswechsel',
-      meta: 'Read · quiz 3/3',
-      href: story.href,
-    },
-    {
-      date: 'Sun · Jul 5',
-      title: 'Der Markt am Sonntag',
-      meta: 'Read · quiz 2/3',
-      href: story.href,
-    },
-    {
-      date: 'Sat · Jul 4',
-      title: 'Das alte Fotoalbum',
-      meta: 'Read · quiz 3/3',
-      href: story.href,
-    },
-  ]
+export async function buildDashboardViewModel(
+  user: User,
+): Promise<DashboardViewModel> {
+  const now = new Date()
+  const todayISO = computeTodayISO(now)
+  const dateLine = computeDateLine(now)
+  const greeting = computeGreeting(user.name)
+
+  const preferredLanguage = user.preferredLanguage // canonical, e.g. "German"
+  const preferredLevel = user.preferredLevel // CEFR, e.g. "B1"
+
+  const dashboardStory = await buildStory(
+    preferredLanguage,
+    preferredLevel,
+    todayISO,
+  )
+  const pickerLangs = buildPickerLangs(preferredLanguage, preferredLevel)
+  const preferredLabel = computePreferredLabel(
+    preferredLanguage,
+    preferredLevel,
+  )
+
+  const summary = await UserStoryActivity.getSummary(user.id, todayISO)
+
+  const week = buildWeek(summary.week, todayISO)
+  const daysRead7 = computeDaysRead7(week)
+  const streakNote = computeStreakNote(summary.streak, summary.readToday)
+  const quizPct = computeQuizPct(summary.quizStats)
+  const quizFraction = computeQuizFraction(summary.quizStats)
+  const quizNote = computeQuizNote(summary.quizStats)
+  const recentQuizzes = await buildRecentQuizzes(summary.recentQuizAttempts)
+  const pastStories = await buildPastStories(
+    summary.recentDays,
+    dashboardStory.href,
+  )
+  const exercise = buildExercise()
 
   return {
     isLoggedIn: true,
     greeting,
     dateLine,
-    story,
+    dashboardStory,
     preferredLabel,
     pickerLangs,
-    streak: 7,
-    streakNote: 'Reading today keeps it alive.',
+    streak: summary.streak,
+    streakNote,
     week,
     daysRead7,
-    quizPct: '89%',
-    quizFraction: '· 8 of 9',
+    quizPct,
+    quizFraction,
     recentQuizzes,
-    quizNote: 'Trickiest this week: dates & times.',
+    quizNote,
     exercise,
     pastStories,
   }
