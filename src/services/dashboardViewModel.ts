@@ -1,12 +1,11 @@
-import path from 'path'
-import { readFile } from 'fs/promises'
-import { StoryContent } from './storyService.js'
+import { findStoryForDate } from './storyLookup.js'
 import { SUPPORTED_LANGUAGES } from '../config/constants.js'
 import type { User } from '../models/user.js'
 import {
   UserStoryActivity,
   type UserActivitySummary,
 } from '../models/userStoryActivity.js'
+import { toLocalDateISO } from '../utils/calendarDate.js'
 
 const NATIVE_NAMES: Record<string, string> = {
   English: 'English',
@@ -96,32 +95,6 @@ export type DashboardViewModel = {
   pastStories: PastStory[]
 }
 
-async function loadStoryForDate(
-  dateISO: string,
-  language: string,
-  level: string,
-): Promise<StoryContent | null> {
-  const [year, month, day] = dateISO.split('-') as [string, string, string]
-
-  const filePath = path.join(
-    process.cwd(),
-    'stories',
-    year,
-    month,
-    day,
-    language.toLowerCase(),
-    level.toLowerCase(),
-    'story.json',
-  )
-
-  try {
-    const fileContent = await readFile(filePath, 'utf-8')
-    return JSON.parse(fileContent) as StoryContent
-  } catch {
-    return null
-  }
-}
-
 // "Mon · Jul 6" style label for a plain YYYY-MM-DD date
 function formatDayLabel(dateISO: string): string {
   const date = new Date(`${dateISO}T00:00:00Z`)
@@ -138,7 +111,9 @@ function formatDayLabel(dateISO: string): string {
 }
 
 async function titleForStory(row: UserStoryActivity): Promise<string> {
-  const content = await loadStoryForDate(row.storyDate, row.language, row.level)
+  const content = (
+    await findStoryForDate(row.storyDate, row.language, row.level)
+  )?.content
   return content?.title ?? `${row.language} ${row.level} story`
 }
 
@@ -147,12 +122,6 @@ function timeOfDayGreeting(): string {
   if (hour < 12) return 'Good morning'
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
-}
-
-function computeTodayISO(now: Date): string {
-  return `${now.getFullYear()}-${(now.getMonth() + 1)
-    .toString()
-    .padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
 }
 
 // Issue number for flavor: the day-of-year, so it's stable per date.
@@ -193,7 +162,8 @@ async function buildStory(
 
   const langLower = preferredLanguage.toLowerCase()
   const levelLower = preferredLevel.toLowerCase()
-  const content = await loadStoryForDate(todayISO, langLower, levelLower)
+  const content = (await findStoryForDate(todayISO, langLower, levelLower))
+    ?.content
   const badgeLabel = `${NATIVE_NAMES[preferredLanguage] ?? preferredLanguage} · ${preferredLevel}`
 
   if (content) {
@@ -351,7 +321,7 @@ export async function buildDashboardViewModel(
   user: User,
 ): Promise<DashboardViewModel> {
   const now = new Date()
-  const todayISO = computeTodayISO(now)
+  const todayISO = toLocalDateISO(now)
   const dateLine = computeDateLine(now)
   const greeting = computeGreeting(user.name)
 

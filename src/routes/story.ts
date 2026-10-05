@@ -1,10 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express'
-import path from 'path'
-import { readFile } from 'fs/promises'
-import { StoryContent } from '../services/storyService.js'
+import { findStoryForDate } from '../services/storyLookup.js'
 import { SUPPORTED_LANGUAGES, LEVELS } from '../config/constants.js'
 import { UserStoryActivity } from '../models/userStoryActivity.js'
 import { signStoryDate, verifyStoryDate } from '../utils/storyDateToken.js'
+import { formatLongDate, toLocalDateISO } from '../utils/calendarDate.js'
 
 const router = Router()
 
@@ -51,33 +50,18 @@ router.get(
         })
       }
 
-      // Build file path based on current date
       const now = new Date()
-      const year = now.getFullYear().toString()
-      const month = (now.getMonth() + 1).toString().padStart(2, '0')
-      const day = now.getDate().toString().padStart(2, '0')
-
-      const filePath = path.join(
-        process.cwd(),
-        'stories',
-        year,
-        month,
-        day,
+      const dateISO = toLocalDateISO(now)
+      const servedStory = await findStoryForDate(
+        dateISO,
         normalizedLanguage,
-        normalizedLevel.toLowerCase(),
-        'story.json',
+        normalizedLevel,
       )
 
-      let content: StoryContent
-
-      try {
-        // Try to load story from filesystem
-        const fileContent = await readFile(filePath, 'utf-8')
-        content = JSON.parse(fileContent)
-        console.log(`Loaded story from ${filePath}`)
-      } catch (error) {
-        // If file doesn't exist, render the no-story page
-        console.log(`Story not found at ${filePath}`)
+      if (!servedStory) {
+        console.log(
+          `No story for ${normalizedLanguage}/${normalizedLevel} on ${dateISO}`,
+        )
         res.render('no-story-today', {
           language:
             normalizedLanguage.charAt(0).toUpperCase() +
@@ -89,17 +73,17 @@ router.get(
             month: 'long',
             day: 'numeric',
           }),
-          dateISO: `${year}-${month}-${day}`,
+          dateISO,
           isLoggedIn: Boolean(req.session.userId),
         })
         return
       }
 
+      const { content, sourceDateISO } = servedStory
       const matchedLanguage = SUPPORTED_LANGUAGES.find(
         (lang) => lang.toLowerCase() === normalizedLanguage,
       )!
       const matchedLevel = allLevels.find((lvl) => lvl === normalizedLevel)!
-      const dateISO = `${year}-${month}-${day}`
       const storyDateToken = req.session.userId
         ? signStoryDate(
             req.session.userId,
@@ -131,29 +115,18 @@ router.get(
         // Skip the current level
         if (otherLevel === normalizedLevel) continue
 
-        const otherFilePath = path.join(
-          process.cwd(),
-          'stories',
-          year,
-          month,
-          day,
+        const otherStory = await findStoryForDate(
+          dateISO,
           normalizedLanguage,
-          otherLevel.toLowerCase(),
-          'story.json',
+          otherLevel,
         )
+        if (!otherStory) continue
 
-        try {
-          const otherFileContent = await readFile(otherFilePath, 'utf-8')
-          const otherStory: StoryContent = JSON.parse(otherFileContent)
-          otherLevels.push({
-            level: otherLevel,
-            title: otherStory.title,
-            url: `/${normalizedLanguage}/${otherLevel.toLowerCase()}`,
-          })
-        } catch {
-          // Story doesn't exist for this level, skip it
-          continue
-        }
+        otherLevels.push({
+          level: otherLevel,
+          title: otherStory.content.title,
+          url: `/${normalizedLanguage}/${otherLevel.toLowerCase()}`,
+        })
       }
 
       res.render('story', {
@@ -171,6 +144,8 @@ router.get(
           day: 'numeric',
         }),
         dateISO,
+        archivedFromDate:
+          sourceDateISO === dateISO ? null : formatLongDate(sourceDateISO),
         storyDateToken,
         otherLevels,
         isLoggedIn: Boolean(req.session.userId),

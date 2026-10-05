@@ -1,5 +1,6 @@
 import { pool } from '../config/db.js'
 import { Language, Level } from '../config/constants.js'
+import { subtractDaysISO } from '../utils/calendarDate.js'
 
 // Shape of a row as returned by Postgres (snake_case columns).
 type UserStoryActivityRow = {
@@ -16,18 +17,6 @@ type UserStoryActivityRow = {
 
 const COLUMNS =
   'id, user_id, story_date::text AS story_date, language, level, correct_count, incorrect_count, created_at, updated_at'
-
-// Subtracts `days` from a plain YYYY-MM-DD calendar date.
-function subtractDaysISO(dateISO: string, days: number): string {
-  const [year, month, day] = dateISO.split('-').map(Number) as [
-    number,
-    number,
-    number,
-  ]
-  const date = new Date(Date.UTC(year, month - 1, day))
-  date.setUTCDate(date.getUTCDate() - days)
-  return date.toISOString().slice(0, 10)
-}
 
 export type UserActivitySummary = {
   streak: number

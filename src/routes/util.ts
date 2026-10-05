@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { StoryGenerationService } from '../services/storyService.js'
 import { SUPPORTED_LANGUAGES, LEVELS } from '../config/constants.js'
+import { isStoryGenerationEnabled } from '../config/storyGeneration.js'
 
 const router = Router()
 
@@ -24,6 +25,15 @@ const formatDate = (date: Date): string => {
 //   2. If a batch is in progress, report it and return (avoids duplicates)
 //   3. Create new batches for today/tomorrow if their stories don't exist
 router.get('/generate-stories', async (_req: Request, res: Response) => {
+  if (!isStoryGenerationEnabled) {
+    res
+      .type('text/plain')
+      .send(
+        'Story generation is disabled (STORY_GENERATION=disabled). No batches were created or processed.'
+      )
+    return
+  }
+
   try {
     const messages: string[] = []
 

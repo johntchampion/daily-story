@@ -92,6 +92,9 @@
             <% if (messages && messages.length > 0) { %>
                 <span class="story-meta"><%= messages.length %> turns · about 5 min</span>
             <% } %>
+            <% if (archivedFromDate) { %>
+                <span class="story-meta">From the archive · first published <%= archivedFromDate %></span>
+            <% } %>
             <% if (hasTranslations) { %>
                 <button type="button" class="toggle-en" id="toggleEn" aria-pressed="false">
                     <span class="toggle-en-dot" aria-hidden="true"></span>
