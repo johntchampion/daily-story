@@ -110,6 +110,9 @@
     <div class="container story">
         <h1 class="story-title"><%= title %></h1>
         <time class="story-date" datetime="<%= dateISO %>"><%= date %></time>
+        <% if (archivedFromDate) { %>
+            <p class="story-archive-note">From the archive · first published <%= archivedFromDate %></p>
+        <% } %>
         <% if (messages && messages.length > 0) { %>
             <% messages.forEach((message, index) => { %>
                 <div class="message">

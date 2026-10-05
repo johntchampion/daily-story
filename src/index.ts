@@ -1,14 +1,15 @@
 import 'dotenv/config'
 import path from 'path'
 import express, { Request, Response } from 'express'
-import { readFile } from 'fs/promises'
 import {
   StoryGenerationService,
   SUPPORTED_LANGUAGES,
   EARLY_LEVELS,
   INTERMEDIATE_LEVELS,
-  StoryContent,
 } from './storyService'
+import { isStoryGenerationEnabled } from './storyGeneration'
+import { findStoryForDate } from './storyLookup'
+import { formatLongDate, toLocalDateISO } from './calendarDate'
 
 // Initialize the story generation service
 const storyService = new StoryGenerationService(
@@ -36,6 +37,15 @@ app.get('/about', (_req: Request, res: Response) => {
 
 // Manual story generation route
 app.get('/generate-stories', async (_req: Request, res: Response) => {
+  if (!isStoryGenerationEnabled) {
+    res
+      .type('text/plain')
+      .send(
+        'Story generation is disabled (STORY_GENERATION=disabled). No batches were created or processed.'
+      )
+    return
+  }
+
   try {
     const messages: string[] = []
 
@@ -186,33 +196,18 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
       })
     }
 
-    // Build file path based on current date
     const now = new Date()
-    const year = now.getFullYear().toString()
-    const month = (now.getMonth() + 1).toString().padStart(2, '0')
-    const day = now.getDate().toString().padStart(2, '0')
-
-    const filePath = path.join(
-      process.cwd(),
-      'stories',
-      year,
-      month,
-      day,
+    const storyDateISO = toLocalDateISO(now)
+    const servedStory = await findStoryForDate(
+      storyDateISO,
       normalizedLanguage,
-      normalizedLevel.toLowerCase(),
-      'story.json'
+      normalizedLevel
     )
 
-    let content: StoryContent
-
-    try {
-      // Try to load story from filesystem
-      const fileContent = await readFile(filePath, 'utf-8')
-      content = JSON.parse(fileContent)
-      console.log(`Loaded story from ${filePath}`)
-    } catch (error) {
-      // If file doesn't exist, render the no-story page
-      console.log(`Story not found at ${filePath}`)
+    if (!servedStory) {
+      console.log(
+        `No story for ${normalizedLanguage}/${normalizedLevel} on ${storyDateISO}`
+      )
       res.render('no-story-today', {
         language:
           normalizedLanguage.charAt(0).toUpperCase() +
@@ -229,6 +224,8 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
       return
     }
 
+    const { content, sourceDateISO } = servedStory
+
     // Load stories for all other levels within the same language
     const otherLevels: Array<{
       level: string
@@ -240,29 +237,18 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
       // Skip the current level
       if (otherLevel === normalizedLevel) continue
 
-      const otherFilePath = path.join(
-        process.cwd(),
-        'stories',
-        year,
-        month,
-        day,
+      const otherStory = await findStoryForDate(
+        storyDateISO,
         normalizedLanguage,
-        otherLevel.toLowerCase(),
-        'story.json'
+        otherLevel
       )
+      if (!otherStory) continue
 
-      try {
-        const otherFileContent = await readFile(otherFilePath, 'utf-8')
-        const otherStory: StoryContent = JSON.parse(otherFileContent)
-        otherLevels.push({
-          level: otherLevel,
-          title: otherStory.title,
-          url: `/${normalizedLanguage}/${otherLevel.toLowerCase()}`,
-        })
-      } catch {
-        // Story doesn't exist for this level, skip it
-        continue
-      }
+      otherLevels.push({
+        level: otherLevel,
+        title: otherStory.content.title,
+        url: `/${normalizedLanguage}/${otherLevel.toLowerCase()}`,
+      })
     }
 
     res.render('story', {
@@ -281,6 +267,8 @@ app.get('/:language/:level', async (req: Request, res: Response, next) => {
         day: 'numeric',
       }),
       dateISO: now.toISOString().split('T')[0],
+      archivedFromDate:
+        sourceDateISO === storyDateISO ? null : formatLongDate(sourceDateISO),
       otherLevels,
     })
   } catch (error) {

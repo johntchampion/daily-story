@@ -28,6 +28,18 @@
     margin-bottom: 2rem;
 }
 
+.story-date:has(+ .story-archive-note) {
+    margin-bottom: 0.25rem;
+}
+
+.story-archive-note {
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-style: italic;
+    color: #78716C;
+    margin: 0 0 2rem;
+}
+
 .message {
     margin-bottom: 18px;
     padding: 14px 0;
@@ -340,6 +352,10 @@
 
     .story-date {
         color: #FCD34D;
+    }
+
+    .story-archive-note {
+        color: #A8A29E;
     }
 
     .message .sender {

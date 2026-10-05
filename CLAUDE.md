@@ -25,6 +25,10 @@ src/
 ├── index.ts           # Main Express app (routes, middleware)
 ├── storyService.ts    # Story generation service (class-based)
 ├── themes.ts          # Theme arrays for each proficiency level
+├── storyGeneration.ts # isStoryGenerationEnabled (from STORY_GENERATION env var)
+├── storyLookup.ts     # findStoryForDate() — reads story files, with archive fallback when generation is disabled
+├── storyArchive.ts    # Cached list of archived story dates + deterministic daily rotation
+├── calendarDate.ts    # YYYY-MM-DD helpers (toLocalDateISO, daysSinceEpoch, formatLongDate)
 ├── views/             # EJS templates
 │   ├── home.ejs       # Language/level selection page
 │   ├── story.ejs      # Story display with quiz
@@ -248,6 +252,33 @@ Required:
 
 - `ANTHROPIC_API_KEY` - API key for Claude (do NOT access .env file)
 - `PORT` - Server port (optional, defaults to 3000)
+- `STORY_GENERATION` - `enabled` (default) or `disabled`; any other value fails at startup. See "Story Generation Mode" below
+
+## Story Generation Mode
+
+`STORY_GENERATION` (read once in `src/storyGeneration.ts`) toggles whether new
+stories are generated:
+
+- **`enabled`** (default): `/generate-stories` creates/processes batches as
+  usual. A missing story renders `no-story-today.ejs`.
+- **`disabled`**: `/generate-stories` returns immediately without touching the
+  Anthropic API. When the story file for the date is missing,
+  `findStoryForDate()` (`src/storyLookup.ts`) serves an archived story
+  instead, chosen by a fixed rotation (`src/storyArchive.ts`):
+  - The archive is every `stories/YYYY/MM/DD` directory dated before the
+    requested date, sorted ascending (scanned once and cached per process).
+  - The day's slot is `daysSinceEpoch(date) % archive.length`, so everyone
+    sees the same story on a given day, consecutive days get different
+    stories, and nothing repeats until the whole archive has been shown.
+  - One source date is chosen per day (not per language/level), so all
+    languages at a level share a theme. If that date lacks a particular
+    language/level file, the next date in the rotation is tried.
+  - The story page shows "From the archive · first published <date>" when a
+    repeat is served. Only if the archive is empty does `no-story-today.ejs`
+    render.
+
+Both the story itself and the "other levels" links go through
+`findStoryForDate()`, so the fallback applies to both.
 
 ## Development Commands
 
