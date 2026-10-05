@@ -29,17 +29,17 @@ services:
         condition: service_healthy
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      DATABASE_URL: ${DATABASE_URL}
+      # Built from the POSTGRES_* values rather than .env's DATABASE_URL, which
+      # points at localhost for running the app outside Compose.
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@daily-story-db:5432/${POSTGRES_DB}
       SESSION_SECRET: ${SESSION_SECRET}
-      STORY_GENERATION: ${STORY_GENERATION:-enabled}
+      STORY_GENERATION: ${STORY_GENERATION:-disabled}
       PORT: ${PORT:-3000}
       NODE_ENV: production
     ports:
       - '${PORT:-3000}:${PORT:-3000}'
-    # Persist generated stories across container restarts.
     volumes:
-      - stories:/app/stories
+      - ./stories:/app/stories
 
 volumes:
   db-data:
-  stories:
