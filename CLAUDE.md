@@ -6,14 +6,14 @@
 
 - **Languages Supported:** English, Spanish, French, German, Italian, Portuguese, Chinese, Japanese
 - **Proficiency Levels:** A1, A2, B1, B2
-- **Key Feature:** AI-generated content using Anthropic's Claude Sonnet 4.5 via Message Batches API
+- **Key Feature:** AI-generated content using Anthropic's Claude Sonnet 5 via Message Batches API
 
 ## Tech Stack
 
 - **Runtime:** Node.js with TypeScript (ES2022)
 - **Framework:** Express.js 5.1.0
 - **Template Engine:** EJS 3.1.10
-- **AI Provider:** Anthropic AI SDK 0.68.0 (Claude Sonnet 4.5)
+- **AI Provider:** Anthropic AI SDK 0.68.0 (Claude Sonnet 5)
 - **Storage:** File-based JSON (no database)
 - **Build Tools:** TypeScript, tsx, nodemon, copyfiles
 - **Analytics:** PostHog

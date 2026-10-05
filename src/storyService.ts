@@ -27,6 +27,11 @@ export const SUPPORTED_LANGUAGES = [
 export const EARLY_LEVELS = ['A1', 'A2']
 export const INTERMEDIATE_LEVELS = ['B1', 'B2']
 
+const STORY_MODEL = 'claude-sonnet-5'
+// Sonnet 5 runs adaptive thinking by default, and thinking tokens count
+// against max_tokens, so leave headroom beyond the story itself.
+const STORY_MAX_TOKENS = 16000
+
 // Simple seeded random number generator for deterministic theme selection
 const seededRandom = (seed: number): number => {
   const x = Math.sin(seed) * 10000
@@ -285,14 +290,14 @@ export class StoryGenerationService {
     }
 
     const response = await this.client.messages.create({
-      model: 'claude-sonnet-4-5',
+      model: STORY_MODEL,
       messages: [
         {
           role: 'user',
           content: this.getPrompt(language, level, selectedTheme),
         },
       ],
-      max_tokens: 4096,
+      max_tokens: STORY_MAX_TOKENS,
       tools: [this.getStoryTool(language, level)],
       tool_choice: { type: 'tool', name: 'create_story' },
     })
@@ -336,14 +341,14 @@ export class StoryGenerationService {
         batchRequests.push({
           custom_id: `${year}${month}${day}-${language.toLowerCase()}-${level.toLowerCase()}`,
           params: {
-            model: 'claude-sonnet-4-5',
+            model: STORY_MODEL,
             messages: [
               {
                 role: 'user' as const,
                 content: this.getPrompt(language, level, theme),
               },
             ],
-            max_tokens: 4096,
+            max_tokens: STORY_MAX_TOKENS,
             tools: [this.getStoryTool(language, level)],
             tool_choice: { type: 'tool' as const, name: 'create_story' },
           },
