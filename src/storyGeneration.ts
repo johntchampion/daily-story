@@ -1,6 +1,5 @@
 // Toggles whether the app generates new stories via the Anthropic Batch API.
-// When disabled, no API calls are made and missing stories are backfilled from
-// the same date last year (see services/storyLookup.ts).
+// When disabled, no API calls are made.
 const STORY_GENERATION_MODES = ['enabled', 'disabled'] as const
 
 type StoryGenerationMode = (typeof STORY_GENERATION_MODES)[number]

@@ -6,7 +6,10 @@ const STORIES_ROOT = path.join(process.cwd(), 'stories')
 const YEAR_PATTERN = /^\d{4}$/
 const MONTH_OR_DAY_PATTERN = /^\d{2}$/
 
-let cachedArchiveDates: Promise<string[]> | null = null
+let cachedArchive: {
+  scannedForDateISO: string
+  dates: Promise<string[]>
+} | null = null
 
 async function listNumericSubdirectories(
   directory: string,
@@ -45,11 +48,13 @@ async function scanArchiveDates(): Promise<string[]> {
   return dates.sort()
 }
 
-// Cached for the life of the process: the archive only grows when story
-// generation is enabled, and rotation is only used when it's disabled.
-function listArchiveDates(): Promise<string[]> {
-  cachedArchiveDates ??= scanArchiveDates()
-  return cachedArchiveDates
+// Rescanned when the requested date changes, so stories generated since the
+// last scan join the rotation once their date has passed.
+function listArchiveDates(dateISO: string): Promise<string[]> {
+  if (cachedArchive?.scannedForDateISO !== dateISO) {
+    cachedArchive = { scannedForDateISO: dateISO, dates: scanArchiveDates() }
+  }
+  return cachedArchive.dates
 }
 
 /**
@@ -60,7 +65,9 @@ function listArchiveDates(): Promise<string[]> {
 export async function archiveDatesInRotationOrder(
   dateISO: string,
 ): Promise<string[]> {
-  const pastDates = (await listArchiveDates()).filter((date) => date < dateISO)
+  const pastDates = (await listArchiveDates(dateISO)).filter(
+    (date) => date < dateISO,
+  )
   if (pastDates.length === 0) return []
 
   const rotationStart = daysSinceEpoch(dateISO) % pastDates.length

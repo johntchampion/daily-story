@@ -26,7 +26,7 @@ src/
 ├── storyService.ts    # Story generation service (class-based)
 ├── themes.ts          # Theme arrays for each proficiency level
 ├── storyGeneration.ts # isStoryGenerationEnabled (from STORY_GENERATION env var)
-├── storyLookup.ts     # findStoryForDate() — reads story files, with archive fallback when generation is disabled
+├── storyLookup.ts     # findStoryForDate() — reads story files, falling back to the archive when missing
 ├── storyArchive.ts    # Cached list of archived story dates + deterministic daily rotation
 ├── calendarDate.ts    # YYYY-MM-DD helpers (toLocalDateISO, daysSinceEpoch, formatLongDate)
 ├── views/             # EJS templates
@@ -241,7 +241,7 @@ Themes are selected deterministically based on date:
 
 ### Error Handling
 
-- Story not found → renders `no-story-today.ejs`
+- Story not found → archived story from the rotation; `no-story-today.ejs` only if the archive is empty
 - Route not found → 404 error page
 - Server errors → 500 error page with sanitized messages
 - Batch errors logged but don't stop other stories in batch
@@ -252,30 +252,36 @@ Required:
 
 - `ANTHROPIC_API_KEY` - API key for Claude (do NOT access .env file)
 - `PORT` - Server port (optional, defaults to 3000)
-- `STORY_GENERATION` - `enabled` (default) or `disabled`; any other value fails at startup. See "Story Generation Mode" below
+- `STORY_GENERATION` - `enabled` (default) or `disabled`; toggles Anthropic API calls only. Any other value fails at startup. See "Story Generation Mode" below
 
 ## Story Generation Mode
 
-`STORY_GENERATION` (read once in `src/storyGeneration.ts`) toggles whether new
-stories are generated:
+`STORY_GENERATION` (read once in `src/storyGeneration.ts`) only toggles calls
+to the Anthropic API:
 
 - **`enabled`** (default): `/generate-stories` creates/processes batches as
-  usual. A missing story renders `no-story-today.ejs`.
+  usual.
 - **`disabled`**: `/generate-stories` returns immediately without touching the
-  Anthropic API. When the story file for the date is missing,
-  `findStoryForDate()` (`src/storyLookup.ts`) serves an archived story
-  instead, chosen by a fixed rotation (`src/storyArchive.ts`):
-  - The archive is every `stories/YYYY/MM/DD` directory dated before the
-    requested date, sorted ascending (scanned once and cached per process).
-  - The day's slot is `daysSinceEpoch(date) % archive.length`, so everyone
-    sees the same story on a given day, consecutive days get different
-    stories, and nothing repeats until the whole archive has been shown.
-  - One source date is chosen per day (not per language/level), so all
-    languages at a level share a theme. If that date lacks a particular
-    language/level file, the next date in the rotation is tried.
-  - The story page shows "From the archive · first published <date>" when a
-    repeat is served. Only if the archive is empty does `no-story-today.ejs`
-    render.
+  Anthropic API.
+
+## Archive Fallback
+
+Regardless of `STORY_GENERATION`, when the story file for the date is missing,
+`findStoryForDate()` (`src/storyLookup.ts`) serves an archived story instead,
+chosen by a fixed rotation (`src/storyArchive.ts`):
+
+- The archive is every `stories/YYYY/MM/DD` directory dated before the
+  requested date, sorted ascending (rescanned whenever the requested date
+  changes, so newly generated days join the rotation).
+- The day's slot is `daysSinceEpoch(date) % archive.length`, so everyone
+  sees the same story on a given day, consecutive days get different
+  stories, and nothing repeats until the whole archive has been shown.
+- One source date is chosen per day (not per language/level), so all
+  languages at a level share a theme. If that date lacks a particular
+  language/level file, the next date in the rotation is tried.
+- The story page shows "From the archive · first published <date>" when a
+  repeat is served. Only if the archive is empty does `no-story-today.ejs`
+  render.
 
 Both the story itself and the "other levels" links go through
 `findStoryForDate()`, so the fallback applies to both.

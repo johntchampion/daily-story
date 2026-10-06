@@ -2,7 +2,6 @@ import path from 'path'
 import { readFile } from 'fs/promises'
 import { StoryContent } from './storyService.js'
 import { archiveDatesInRotationOrder } from './storyArchive.js'
-import { isStoryGenerationEnabled } from './storyGeneration.js'
 
 export type ServedStory = {
   content: StoryContent
@@ -61,8 +60,8 @@ async function findArchivedStoryInRotation(
 }
 
 /**
- * The story served on `dateISO`. With generation disabled, a missing story is
- * replaced by an archived one picked deterministically for that date.
+ * The story served on `dateISO`. A missing story is replaced by an archived one
+ * picked deterministically for that date.
  */
 export async function findStoryForDate(
   dateISO: string,
@@ -70,7 +69,7 @@ export async function findStoryForDate(
   level: string,
 ): Promise<ServedStory | null> {
   const storyForDate = await readStoryFile(dateISO, language, level)
-  if (storyForDate || isStoryGenerationEnabled) return storyForDate
+  if (storyForDate) return storyForDate
 
   return findArchivedStoryInRotation(dateISO, language, level)
 }
